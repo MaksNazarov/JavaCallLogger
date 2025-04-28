@@ -61,27 +61,42 @@ public class JarClassLister {
         CtMethod logMethod = loggerClass.getDeclaredMethod("log");
 
         for (CtMethod method : ctClass.getDeclaredMethods()) {
-            if (!method.isEmpty()) {
-                String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
+            instrumentBehavior(method, loggerClass, logMethod);
+        }
+        for (CtConstructor ctor : ctClass.getDeclaredConstructors()) {
+            instrumentBehavior(ctor, loggerClass, logMethod);
+        }
+    }
+    
+    private static void instrumentBehavior(CtBehavior behavior, 
+                                          CtClass loggerClass, 
+                                          CtMethod logMethod) throws Exception {
+        // TODO: option to skip empty methods/constructors
+
+        String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
                     "String caller = (stack.length > 2) ? " +
                         "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
 
-                String logCall = String.format(
-                    "{ %s.%s(%s, %s);}",
-                    loggerClass.getName(),
-                    logMethod.getName(),
-                    "caller",
-                    wrap(ctClass.getName() + "::" + method.getName())
-                );
+        String callee = String.format(
+            "%s::%s",
+            behavior.getDeclaringClass().getName(),
+            behavior.getName()
+        );
 
-                String beforeBlock = "{" + 
-                    callerInit +
-                    logCall +
-                "}";
+        String logCall = String.format(
+            "{ %s.%s(%s, %s);}",
+            loggerClass.getName(),
+            logMethod.getName(),
+            "caller",
+            wrap(callee)
+        );
 
-                method.insertBefore(beforeBlock);
-            }
-        }
+        String beforeBlock = "{" + 
+            callerInit +
+            logCall +
+        "}";
+        
+        behavior.insertBefore(beforeBlock);
     }
 
     private static void addCallLoggerClass(JarOutputStream jos) throws Exception {
