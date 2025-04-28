@@ -64,7 +64,7 @@ public class JarClassLister {
             if (!method.isEmpty()) {
                 String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
                     "String caller = (stack.length > 2) ? " +
-                        "stack[2].getClassName() + \"::\" + stack[2].getMethodName() + \"()\" : \"<unknown>\";";
+                        "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
 
                 String logCall = String.format(
                     "{ %s.%s(%s, %s);}",
