@@ -7,10 +7,6 @@ import java.util.Set;
 public class CallLogger {
     private static HashMap<Pair, Integer> graph = new HashMap<>();
 
-    static { // TODO: decide on approach: shutdown hook for any case vs insertAfter(Main::main) for cleanness
-        Runtime.getRuntime().addShutdownHook(new Thread(CallLogger::dump));
-    }
-
     public static void log(String caller, String callee) {
         Pair key = new Pair(caller, callee);
         graph.put(key, graph.getOrDefault(key, 0) + 1);

@@ -3,9 +3,11 @@ package hse.project;
 import javassist.*;
 import java.io.*;
 import java.util.Enumeration;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 public class JarClassLister {
     private final static String INPUT_JAR = "jar_test_sources/app.jar";
@@ -17,6 +19,8 @@ public class JarClassLister {
             System.out.println("Input JAR not found at: " + inputJar.getAbsolutePath());
             return;
         }
+
+        String mainClassName = getMainClassName(inputJar);
 
         ClassPool pool = ClassPool.getDefault();
         pool.insertClassPath(inputJar.getAbsolutePath());
@@ -36,6 +40,20 @@ public class JarClassLister {
 
                     CtClass ctClass = pool.get(className);
                     modifyMethods(ctClass);
+
+                    if (mainClassName != null && className.equals(mainClassName)) {
+                        try {
+                            CtClass stringArrayType = pool.get("[Ljava.lang.String;");
+                            CtMethod mainMethod = ctClass.getDeclaredMethod(
+                                "main",
+                                new CtClass[]{stringArrayType}
+                            );
+                            
+                            mainMethod.insertAfter("{ hse.project.CallLogger.dump(); }");
+                        } catch (NotFoundException e) {
+                            System.err.println("Main method not found in: " + className);
+                        }
+                    }
                     
                     JarEntry newEntry = new JarEntry(entryName);
                     jos.putNextEntry(newEntry);
@@ -54,6 +72,21 @@ public class JarClassLister {
 
             addCallLoggerClass(jos);
         }
+    }
+
+    private static String getMainClassName(File inputJar) throws IOException {
+        String mainClassName = null;
+        try (JarFile jar = new JarFile(inputJar)) {
+            Manifest manifest = jar.getManifest();
+            if (manifest != null) {
+                mainClassName = manifest.getMainAttributes()
+                    .getValue(Attributes.Name.MAIN_CLASS);
+                if (mainClassName != null) {
+                    mainClassName = mainClassName.replace('/', '.');
+                }
+            }
+        }
+        return mainClassName;
     }
 
     private static void modifyMethods(CtClass ctClass) throws Exception {
