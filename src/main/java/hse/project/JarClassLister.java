@@ -85,14 +85,19 @@ public class JarClassLister {
     }
 
     private static void addCallLoggerClass(JarOutputStream jos) throws Exception {
-        String classResourcePath = "/hse/project/CallLogger.class";
-        JarEntry newEntry = new JarEntry("hse/project/CallLogger.class");
+        addClassToJar(jos, "/hse/project/CallLogger.class");
+        addClassToJar(jos, "/hse/project/CallLogger$Pair.class");
+    }
+    
+    private static void addClassToJar(JarOutputStream jos, String resourcePath) 
+            throws Exception {
+        JarEntry newEntry = new JarEntry(resourcePath.replaceFirst("^/", ""));
         jos.putNextEntry(newEntry);
 
         try (InputStream classStream = 
-                JarClassLister.class.getResourceAsStream(classResourcePath)) {
+                JarClassLister.class.getResourceAsStream(resourcePath)) {
             if (classStream == null) {
-                throw new RuntimeException("CallLogger.class not found in project");
+                throw new RuntimeException(resourcePath + " not found in project");
             }
             classStream.transferTo(jos);
         }
