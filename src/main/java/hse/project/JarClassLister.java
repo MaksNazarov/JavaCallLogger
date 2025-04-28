@@ -62,14 +62,24 @@ public class JarClassLister {
 
         for (CtMethod method : ctClass.getDeclaredMethods()) {
             if (!method.isEmpty()) {
+                String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
+                    "String caller = (stack.length > 2) ? " +
+                        "stack[2].getClassName() + \"::\" + stack[2].getMethodName() + \"()\" : \"<unknown>\";";
+
                 String logCall = String.format(
                     "{ %s.%s(%s, %s);}",
                     loggerClass.getName(),
                     logMethod.getName(),
-                    wrap("caller"),
+                    "caller",
                     wrap(ctClass.getName() + "::" + method.getName())
                 );
-                method.insertBefore(logCall);
+
+                String beforeBlock = "{" + 
+                    callerInit +
+                    logCall +
+                "}";
+
+                method.insertBefore(beforeBlock);
             }
         }
     }
