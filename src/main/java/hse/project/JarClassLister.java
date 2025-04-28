@@ -10,6 +10,7 @@ import java.util.jar.JarOutputStream;
 public class JarClassLister {
     private final static String INPUT_JAR = "jar_test_sources/app.jar";
     private final static String OUTPUT_JAR = "modified_app.jar";
+    private final static Boolean SKIP_EMPTY_BODIES = false; // prevents logging if callee is empty method/constructor
 
     public static void main(String[] args) throws Exception {
         File inputJar = new File(INPUT_JAR);
@@ -71,7 +72,7 @@ public class JarClassLister {
     private static void instrumentBehavior(CtBehavior behavior, 
                                           CtClass loggerClass, 
                                           CtMethod logMethod) throws Exception {
-        // TODO: option to skip empty methods/constructors
+        if (SKIP_EMPTY_BODIES && behavior.isEmpty()) return;
 
         String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
                     "String caller = (stack.length > 2) ? " +
