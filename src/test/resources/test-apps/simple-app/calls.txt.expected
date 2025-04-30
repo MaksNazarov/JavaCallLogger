@@ -1,0 +1,4 @@
+5 5
+<unknown> simpleapp.Main::main 1
+simpleapp.Main::main simpleapp.Greeter::<init> 1
+simpleapp.Main::main simpleapp.Greeter::greet 1

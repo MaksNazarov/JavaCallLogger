@@ -22,6 +22,10 @@ public class CallLogger {
         graph.put(key, graph.getOrDefault(key, 0) + 1);
     }
 
+    public static void setOutputFilename(String filename) {
+        OUTPUT_FILENAME = filename;
+    }
+
     public static void dump() {
         File file = new File(OUTPUT_FILENAME);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
@@ -48,5 +52,5 @@ public class CallLogger {
         }
     }
 
-    private static record Pair(String caller, String callee) {}
+    private record Pair(String caller, String callee) {}
 }

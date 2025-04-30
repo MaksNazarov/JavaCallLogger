@@ -1,0 +1,4 @@
+3 4
+<unknown> recursiveapp.Main::main 1
+recursiveapp.Main::main recursiveapp.Main::factorial 1
+recursiveapp.Main::factorial recursiveapp.Main::factorial 3

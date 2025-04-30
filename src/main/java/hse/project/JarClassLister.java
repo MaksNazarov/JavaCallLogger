@@ -8,11 +8,15 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 
 public class JarClassLister {
-    private final static String INPUT_JAR = "jar_test_sources/app.jar";
-    private final static String OUTPUT_JAR = "modified_app.jar";
+    private static String INPUT_JAR = "jar_test_sources/app.jar";
+    private static String OUTPUT_JAR = "modified_app.jar";
     private final static Boolean SKIP_EMPTY_BODIES = false; // prevents logging if callee is empty method/constructor
 
     public static void main(String[] args) throws Exception {
+        if (args.length >= 1) INPUT_JAR = args[0];
+        if (args.length >= 2) OUTPUT_JAR = args[1];
+        if (args.length >= 3) CallLogger.setOutputFilename(args[2]);
+
         File inputJar = new File(INPUT_JAR);
         if (!inputJar.exists()) {
             System.out.println("Input JAR not found at: " + inputJar.getAbsolutePath());
