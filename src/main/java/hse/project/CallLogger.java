@@ -9,7 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CallLogger {
-    private static HashMap<Pair, Integer> graph = new HashMap<>();
+    private static final HashMap<Pair, Integer> graph = new HashMap<>();
+    private static final Set<String> EXCLUDED_PACKAGES = Set.of(
+            "java.", "javax.", "jdk.", "sun.",
+            "com.sun.", "org.xml.", "org.w3c."
+    ); // TODO: make runtime-applied: read from config file, save in instrumented JAR dynamically
 
     private static String OUTPUT_FILENAME = "calls.txt";
 
@@ -18,8 +22,20 @@ public class CallLogger {
     }
 
     public static void log(String caller, String callee) {
+        if (isExcluded(caller) || isExcluded(callee)) {
+            return;
+        }
         Pair key = new Pair(caller, callee);
         graph.put(key, graph.getOrDefault(key, 0) + 1);
+    }
+
+    private static boolean isExcluded(String className) {
+        for (String prefix : EXCLUDED_PACKAGES) {
+            if (className.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void setOutputFilename(String filename) {
@@ -40,10 +56,10 @@ public class CallLogger {
             for (var entry : graph.entrySet()) {
                 Pair pair = entry.getKey();
                 writer.write(String.format(
-                    "%s %s %d",
-                    pair.caller,
-                    pair.callee,
-                    entry.getValue()
+                        "%s %s %d",
+                        pair.caller,
+                        pair.callee,
+                        entry.getValue()
                 ));
                 writer.newLine();
             }
@@ -52,5 +68,6 @@ public class CallLogger {
         }
     }
 
-    private record Pair(String caller, String callee) {}
+    private record Pair(String caller, String callee) {
+    }
 }
