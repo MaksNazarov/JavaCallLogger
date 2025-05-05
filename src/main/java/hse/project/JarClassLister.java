@@ -1,6 +1,9 @@
 package hse.project;
 
 import javassist.*;
+import javassist.expr.ExprEditor;
+import javassist.expr.MethodCall;
+
 import java.io.*;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
