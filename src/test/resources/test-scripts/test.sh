@@ -1,7 +1,7 @@
 #!/bin/bash
 
-APP_NAME="simple-app"
-MAIN_CLASS="simpleapp.Main"
+APP_NAME="lambda-app"
+MAIN_CLASS="lambdaapp.Main"
 OUTPUT_FILE="calls.txt"
 MODE="$1"
 DIFF_FILE="diff-output.txt"

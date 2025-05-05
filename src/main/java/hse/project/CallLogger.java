@@ -22,7 +22,7 @@ public class CallLogger {
     }
 
     public static void log(String caller, String callee) {
-        if (isExcluded(caller) || isExcluded(callee)) {
+        if (isExcluded(caller) || isExcluded(callee) || caller.contains("lambda$")) {
             return;
         }
         Pair key = new Pair(caller, callee);

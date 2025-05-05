@@ -1,0 +1,4 @@
+4 3
+<unknown> lambdaapp.Main::main 1
+lambdaapp.A::call hse.project.CallLogger::log 1
+lambdaapp.Main::main hse.project.CallLogger::log 1

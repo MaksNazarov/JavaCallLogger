@@ -72,12 +72,40 @@ public class JarClassLister {
             instrumentBehavior(ctor, loggerClass, logMethod);
         }
     }
-    
-    private static void instrumentBehavior(CtBehavior behavior, 
-                                          CtClass loggerClass, 
+
+    private static void instrumentBehavior(CtBehavior behavior,
+                                          CtClass loggerClass,
                                           CtMethod logMethod) throws Exception {
         if (SKIP_EMPTY_BODIES && behavior.isEmpty()) return;
 
+        String beforeBlock = getBeforeBlock(behavior, loggerClass, logMethod);
+
+        behavior.insertBefore(beforeBlock);
+
+        // catch and log lambda calls
+        behavior.instrument(new ExprEditor() {
+            @Override
+            public void edit(MethodCall methodCall) throws CannotCompileException {
+                String calleeMethod = String.format(
+                        "%s::%s",
+                        methodCall.getClassName(),
+                        methodCall.getMethodName()
+                );
+
+                String logLambdaCall = String.format(
+                    "{ %s.%s(%s, %s); }",
+                    loggerClass.getName(),
+                    logMethod.getName(),
+                    "\"" + behavior.getDeclaringClass().getName() + "::" + behavior.getName() + "\"",
+                    wrap(calleeMethod)
+                );
+
+                methodCall.replace(logLambdaCall + " $_ = $proceed($$);");
+            }
+        });
+    }
+
+    private static String getBeforeBlock(CtBehavior behavior, CtClass loggerClass, CtMethod logMethod) {
         String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
                     "String caller = (stack.length > 2) ? " +
                         "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
@@ -96,25 +124,23 @@ public class JarClassLister {
             wrap(callee)
         );
 
-        String beforeBlock = "{" + 
+        return "{" +
             callerInit +
             logCall +
         "}";
-        
-        behavior.insertBefore(beforeBlock);
     }
 
     private static void addCallLoggerClass(JarOutputStream jos) throws Exception {
         addClassToJar(jos, "/hse/project/CallLogger.class");
         addClassToJar(jos, "/hse/project/CallLogger$Pair.class");
     }
-    
-    private static void addClassToJar(JarOutputStream jos, String resourcePath) 
+
+    private static void addClassToJar(JarOutputStream jos, String resourcePath)
             throws Exception {
         JarEntry newEntry = new JarEntry(resourcePath.replaceFirst("^/", ""));
         jos.putNextEntry(newEntry);
 
-        try (InputStream classStream = 
+        try (InputStream classStream =
                 JarClassLister.class.getResourceAsStream(resourcePath)) {
             if (classStream == null) {
                 throw new RuntimeException(resourcePath + " not found in project");
