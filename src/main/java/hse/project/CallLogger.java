@@ -12,7 +12,8 @@ public class CallLogger {
     private static final HashMap<Pair, Integer> graph = new HashMap<>();
     private static final Set<String> EXCLUDED_PACKAGES = Set.of(
             "java.", "javax.", "jdk.", "sun.",
-            "com.sun.", "org.xml.", "org.w3c."
+            "com.sun.", "org.xml.", "org.w3c.",
+            "hse.project" // TODO: auto skip without adding to Excluded packages
     ); // TODO: make runtime-applied: read from config file, save in instrumented JAR dynamically
 
     private static String OUTPUT_FILENAME = "calls.txt";
