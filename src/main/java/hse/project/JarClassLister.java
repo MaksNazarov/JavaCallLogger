@@ -69,11 +69,36 @@ public class JarClassLister {
         CtMethod logMethod = loggerClass.getDeclaredMethod("log");
 
         for (CtMethod method : ctClass.getDeclaredMethods()) {
-            instrumentBehavior(method, loggerClass, logMethod);
+            if (notInstrumented(method)) {
+                instrumentBehavior(method, loggerClass, logMethod);
+                markAsInstrumented(method);
+            }
         }
         for (CtConstructor ctor : ctClass.getDeclaredConstructors()) {
-            instrumentBehavior(ctor, loggerClass, logMethod);
+            if (notInstrumented(ctor)) {
+                instrumentBehavior(ctor, loggerClass, logMethod);
+                markAsInstrumented(ctor);
+            }
         }
+        // TODO: destructors
+    }
+
+    private static boolean notInstrumented(CtBehavior behavior) {
+        return !behavior.hasAnnotation(Instrumented.class);
+    }
+
+    private static void markAsInstrumented(CtBehavior behavior) {
+//        System.out.println("Marking as instrumented: " + behavior.getLongName());
+        javassist.bytecode.ConstPool constPool = behavior.getMethodInfo().getConstPool();
+        javassist.bytecode.AnnotationsAttribute attr =
+                new javassist.bytecode.AnnotationsAttribute(constPool, javassist.bytecode.AnnotationsAttribute.visibleTag);
+
+        javassist.bytecode.annotation.Annotation ann =
+                new javassist.bytecode.annotation.Annotation(Instrumented.class.getName(), constPool);
+//        System.out.println("Annotation created: " + ann);
+
+        attr.addAnnotation(ann);
+        behavior.getMethodInfo().addAttribute(attr);
     }
 
     private static void instrumentBehavior(CtBehavior behavior,
@@ -127,15 +152,13 @@ public class JarClassLister {
             wrap(callee)
         );
 
-        return "{" +
-            callerInit +
-            logCall +
-        "}";
+        return "{" + callerInit + logCall + "}";
     }
 
     private static void addCallLoggerClass(JarOutputStream jos) throws Exception {
         addClassToJar(jos, "/hse/project/CallLogger.class");
         addClassToJar(jos, "/hse/project/CallLogger$Pair.class");
+        addClassToJar(jos, "/hse/project/Instrumented.class");
     }
 
     private static void addClassToJar(JarOutputStream jos, String resourcePath)
