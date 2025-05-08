@@ -111,26 +111,26 @@ public class JarClassLister {
         behavior.insertBefore(beforeBlock);
 
         // catch and log lambda calls
-        behavior.instrument(new ExprEditor() {
-            @Override
-            public void edit(MethodCall methodCall) throws CannotCompileException {
-                String calleeMethod = String.format(
-                        "%s::%s",
-                        methodCall.getClassName(),
-                        methodCall.getMethodName()
-                );
-
-                String logLambdaCall = String.format(
-                    "{ %s.%s(%s, %s); }",
-                    loggerClass.getName(),
-                    logMethod.getName(),
-                    "\"" + behavior.getDeclaringClass().getName() + "::" + behavior.getName() + "\"",
-                    wrap(calleeMethod)
-                );
-
-                methodCall.replace(logLambdaCall + " $_ = $proceed($$);");
-            }
-        });
+//        behavior.instrument(new ExprEditor() {
+//            @Override
+//            public void edit(MethodCall methodCall) throws CannotCompileException {
+//                String calleeMethod = String.format(
+//                        "%s::%s",
+//                        methodCall.getClassName(),
+//                        methodCall.getMethodName()
+//                );
+//
+//                String logLambdaCall = String.format(
+//                    "{ %s.%s(%s, %s); }",
+//                    loggerClass.getName(),
+//                    logMethod.getName(),
+//                    "\"" + behavior.getDeclaringClass().getName() + "::" + behavior.getName() + "\"",
+//                    wrap(calleeMethod)
+//                );
+//
+//                methodCall.replace(logLambdaCall + " $_ = $proceed($$);");
+//            }
+//        });
     }
 
     private static String getBeforeBlock(CtBehavior behavior, CtClass loggerClass, CtMethod logMethod) {
