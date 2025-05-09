@@ -1,15 +1,11 @@
 package hse.project;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.io.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 
 public class CallLogger {
-    private static final HashMap<Pair, Integer> graph = new HashMap<>();
+    private static final ConcurrentHashMap<Pair, Integer> graph = new ConcurrentHashMap<>();
     private static final Set<String> EXCLUDED_PACKAGES = Set.of(
             "java.", "javax.", "jdk.", "sun.",
             "com.sun.", "org.xml.", "org.w3c.",
@@ -26,8 +22,11 @@ public class CallLogger {
         if (isExcluded(caller) || isExcluded(callee) || caller.contains("lambda$")) {
             return;
         }
+
+        // TODO: caller thread info? Thread.currentThread().getName()
+
         Pair key = new Pair(caller, callee);
-        graph.put(key, graph.getOrDefault(key, 0) + 1);
+        graph.merge(key, 1, Integer::sum);
     }
 
     private static boolean isExcluded(String className) {
@@ -46,7 +45,7 @@ public class CallLogger {
     public static void dump() {
         File file = new File(OUTPUT_FILENAME);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            Set<String> nodes = new HashSet<>();
+            Set<String> nodes = ConcurrentHashMap.newKeySet();
             for (Pair pair : graph.keySet()) {
                 nodes.add(pair.caller);
                 nodes.add(pair.callee);

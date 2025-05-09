@@ -24,12 +24,14 @@ public class Main {
 
     private static void task1() {
         Helper helper = new Helper();
-        helper.doSomething();
+        for (int i = 0; i < 1010; ++i) {
+            helper.doSomething();
+        }
     }
 
     private static void task2() {
         Utility utility = new Utility();
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             utility.logMessage("Hello from task2");
         }
     }

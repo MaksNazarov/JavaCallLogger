@@ -1,0 +1,6 @@
+8 5
+multithreadapp.Main::task1 multithreadapp.Helper::doSomething 1010
+multithreadapp.Main::task2 multithreadapp.Utility::Utility 1
+<unknown> multithreadapp.Main::main 1
+multithreadapp.Main::task1 multithreadapp.Helper::Helper 1
+multithreadapp.Main::task2 multithreadapp.Utility::logMessage 1000
