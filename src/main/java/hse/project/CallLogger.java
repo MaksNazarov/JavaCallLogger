@@ -1,8 +1,11 @@
 package hse.project;
 
-import java.io.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CallLogger {
     private static final ConcurrentHashMap<Pair, Integer> graph = new ConcurrentHashMap<>();
@@ -19,8 +22,13 @@ public class CallLogger {
     }
 
     public static void log(String caller, String callee) {
-        if (isExcluded(caller) || isExcluded(callee) || caller.contains("lambda$")) {
+        if (isExcluded(caller) || isExcluded(callee)) {
             return;
+        }
+
+        // map lambda methods to the enclosing method for better graph readability
+        if (caller.contains("lambda$")) {
+            caller = lambdaNameToEnclosingName(caller);
         }
 
         // TODO: caller thread info? Thread.currentThread().getName()
@@ -29,7 +37,16 @@ public class CallLogger {
         graph.merge(key, 1, Integer::sum);
     }
 
-    private static boolean isExcluded(String className) {
+    private static String lambdaNameToEnclosingName(String name) {
+        String[] parts = name.split("\\$");
+        if (parts.length == 1) {
+            return parts[0]; // no $ encountered, a normal method name
+        } else {
+            return parts[0].substring(0, parts[0].lastIndexOf("lambda")) + parts[1];
+        }
+    }
+
+    public static boolean isExcluded(String className) {
         for (String prefix : EXCLUDED_PACKAGES) {
             if (className.startsWith(prefix)) {
                 return true;

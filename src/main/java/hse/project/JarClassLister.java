@@ -1,10 +1,10 @@
 package hse.project;
 
 import javassist.*;
-import javassist.expr.ExprEditor;
-import javassist.expr.MethodCall;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -18,7 +18,9 @@ public class JarClassLister {
     public static void main(String[] args) throws Exception {
         if (args.length >= 1) INPUT_JAR = args[0];
         if (args.length >= 2) OUTPUT_JAR = args[1];
-        if (args.length >= 3) CallLogger.setOutputFilename(args[2]); // FIXME: ofc doesn't work, should edit the CallLogger entry directly and/or use config file
+        if (args.length >= 3) {
+            CallLogger.setOutputFilename(args[2]); // FIXME: ofc doesn't work, should edit the CallLogger entry directly and/or use config file
+        }
 
         File inputJar = new File(INPUT_JAR);
         if (!inputJar.exists()) {
@@ -44,7 +46,7 @@ public class JarClassLister {
 
                     CtClass ctClass = pool.get(className);
                     modifyMethods(ctClass);
-                    
+
                     JarEntry newEntry = new JarEntry(entryName);
                     jos.putNextEntry(newEntry);
                     jos.write(ctClass.toBytecode());
@@ -102,54 +104,31 @@ public class JarClassLister {
     }
 
     private static void instrumentBehavior(CtBehavior behavior,
-                                          CtClass loggerClass,
-                                          CtMethod logMethod) throws Exception {
+                                           CtClass loggerClass,
+                                           CtMethod logMethod) throws Exception {
         if (SKIP_EMPTY_BODIES && behavior.isEmpty()) return;
 
         String beforeBlock = getBeforeBlock(behavior, loggerClass, logMethod);
-
         behavior.insertBefore(beforeBlock);
-
-        // catch and log lambda calls
-//        behavior.instrument(new ExprEditor() {
-//            @Override
-//            public void edit(MethodCall methodCall) throws CannotCompileException {
-//                String calleeMethod = String.format(
-//                        "%s::%s",
-//                        methodCall.getClassName(),
-//                        methodCall.getMethodName()
-//                );
-//
-//                String logLambdaCall = String.format(
-//                    "{ %s.%s(%s, %s); }",
-//                    loggerClass.getName(),
-//                    logMethod.getName(),
-//                    "\"" + behavior.getDeclaringClass().getName() + "::" + behavior.getName() + "\"",
-//                    wrap(calleeMethod)
-//                );
-//
-//                methodCall.replace(logLambdaCall + " $_ = $proceed($$);");
-//            }
-//        });
     }
 
     private static String getBeforeBlock(CtBehavior behavior, CtClass loggerClass, CtMethod logMethod) {
         String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
-                    "String caller = (stack.length > 2) ? " +
-                        "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
+                "String caller = (stack.length > 2) ? " +
+                "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
 
         String callee = String.format(
-            "%s::%s",
-            behavior.getDeclaringClass().getName(),
-            behavior.getName()
+                "%s::%s",
+                behavior.getDeclaringClass().getName(),
+                behavior.getName()
         );
 
         String logCall = String.format(
-            "{ %s.%s(%s, %s);}",
-            loggerClass.getName(),
-            logMethod.getName(),
-            "caller",
-            wrap(callee)
+                "{ %s.%s(%s, %s);}",
+                loggerClass.getName(),
+                logMethod.getName(),
+                "caller",
+                wrap(callee)
         );
 
         return "{" + callerInit + logCall + "}";
@@ -167,7 +146,7 @@ public class JarClassLister {
         jos.putNextEntry(newEntry);
 
         try (InputStream classStream =
-                JarClassLister.class.getResourceAsStream(resourcePath)) {
+                     JarClassLister.class.getResourceAsStream(resourcePath)) {
             if (classStream == null) {
                 throw new RuntimeException(resourcePath + " not found in project");
             }
