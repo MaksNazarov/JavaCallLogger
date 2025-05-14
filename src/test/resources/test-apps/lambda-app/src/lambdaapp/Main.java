@@ -1,5 +1,6 @@
 package lambdaapp;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -7,8 +8,15 @@ public class Main {
         List<String> names = List.of("Alice", "Bob", "Charlie");
 
         names.stream()
-            .filter(name -> name.startsWith("A"))
-            .forEach(name -> A.call(name));
+                .filter(name -> name.startsWith("A"))
+                .forEach(name -> A.call(name));
+
+        String[] array = {"acorn", "bubble"};
+        Arrays.stream(array).forEach(s -> {
+            s.chars().forEach(c -> {
+                A.call(String.valueOf(c));
+            });
+        });
     }
 }
 
