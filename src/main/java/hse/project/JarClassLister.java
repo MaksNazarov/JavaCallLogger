@@ -2,10 +2,12 @@ package hse.project;
 
 import javassist.*;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -135,23 +137,58 @@ public class JarClassLister {
     }
 
     private static void addCallLoggerClass(JarOutputStream jos) throws Exception {
-        addClassToJar(jos, "/hse/project/CallLogger.class");
-        addClassToJar(jos, "/hse/project/CallLogger$Pair.class");
-        addClassToJar(jos, "/hse/project/Instrumented.class");
+        addAllClassesFromPackage(jos, "hse.project");
     }
 
-    private static void addClassToJar(JarOutputStream jos, String resourcePath)
-            throws Exception {
-        JarEntry newEntry = new JarEntry(resourcePath.replaceFirst("^/", ""));
-        jos.putNextEntry(newEntry);
+    private static void addAllClassesFromPackage(JarOutputStream jos, String packageName) throws IOException, URISyntaxException {
+        String path = packageName.replace('.', '/');
+        ClassLoader classLoader = JarClassLister.class.getClassLoader();
+        Enumeration<URL> resources = classLoader.getResources(path);
 
-        try (InputStream classStream =
-                     JarClassLister.class.getResourceAsStream(resourcePath)) {
-            if (classStream == null) {
-                throw new RuntimeException(resourcePath + " not found in project");
+        while (resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+
+            if (resource.getProtocol().equals("jar")) {
+                JarFile jarFile = ((JarURLConnection) resource.openConnection()).getJarFile();
+                Enumeration<JarEntry> entries = jarFile.entries();
+
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (entry.getName().startsWith(path) && entry.getName().endsWith(".class")) {
+                        addClassFromJar(jos, jarFile, entry);
+                    }
+                }
+            } else {
+                File directory = new File(resource.toURI());
+                if (directory.exists()) {
+                    collectAndAddClasses(jos, directory, packageName);
+                }
             }
-            classStream.transferTo(jos);
         }
+    }
+
+    private static void collectAndAddClasses(JarOutputStream jos, File dir, String packageName) throws IOException {
+        for (File file : Objects.requireNonNull(dir.listFiles())) {
+            if (file.isDirectory()) {
+                collectAndAddClasses(jos, file, packageName + "." + file.getName());
+            } else if (file.getName().endsWith(".class")) {
+                String entryName = packageName.replace('.', '/') + "/" + file.getName();
+                JarEntry entry = new JarEntry(entryName);
+                jos.putNextEntry(entry);
+                try (InputStream is = new FileInputStream(file)) {
+                    is.transferTo(jos);
+                }
+                jos.closeEntry();
+            }
+        }
+    }
+
+    private static void addClassFromJar(JarOutputStream jos, JarFile sourceJar, JarEntry entry) throws IOException {
+        jos.putNextEntry(new JarEntry(entry.getName()));
+        try (InputStream is = sourceJar.getInputStream(entry)) {
+            is.transferTo(jos);
+        }
+        jos.closeEntry();
     }
 
     private static String wrap(String s) {
