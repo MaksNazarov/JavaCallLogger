@@ -1,23 +1,27 @@
 package hse.project;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import hse.project.graph.dump.GraphExporter;
+import hse.project.graph.dump.GraphExporterFactory;
+import hse.project.graph.struct.CallGraph;
+
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CallLogger {
-    private static final ConcurrentHashMap<Pair, Integer> graph = new ConcurrentHashMap<>();
+    private static final String exporterType = "simple";
     private static final Set<String> EXCLUDED_PACKAGES = Set.of(
             "java.", "javax.", "jdk.", "sun.",
             "com.sun.", "org.xml.", "org.w3c.",
             "hse.project" // TODO: auto skip without adding to Excluded packages
     ); // TODO: make runtime-applied: read from config file, save in instrumented JAR dynamically
 
+    private static final CallGraph callGraph = new CallGraph();
+    private static final GraphExporter exporter;
+
     private static String OUTPUT_FILENAME = "calls.txt";
 
-    static { // TODO: decide on approach: shutdown hook for any case vs insertAfter(Main::main) for cleanness
+    static {
+        exporter = GraphExporterFactory.createExporter(exporterType);
         Runtime.getRuntime().addShutdownHook(new Thread(CallLogger::dump));
     }
 
@@ -33,8 +37,7 @@ public class CallLogger {
 
         // TODO: caller thread info? Thread.currentThread().getName()
 
-        Pair key = new Pair(caller, callee);
-        graph.merge(key, 1, Integer::sum);
+        callGraph.addEdge(caller, callee);
     }
 
     private static String lambdaNameToEnclosingName(String name) {
@@ -60,31 +63,11 @@ public class CallLogger {
     }
 
     public static void dump() {
-        File file = new File(OUTPUT_FILENAME);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            Set<String> nodes = ConcurrentHashMap.newKeySet();
-            for (Pair pair : graph.keySet()) {
-                nodes.add(pair.caller);
-                nodes.add(pair.callee);
-            }
-
-            writer.write(nodes.size() + " " + graph.size());
-            writer.newLine();
-            for (var entry : graph.entrySet()) {
-                Pair pair = entry.getKey();
-                writer.write(String.format(
-                        "%s %s %d",
-                        pair.caller,
-                        pair.callee,
-                        entry.getValue()
-                ));
-                writer.newLine();
-            }
+        try {
+            exporter.export(callGraph, OUTPUT_FILENAME);
         } catch (IOException e) {
-            System.err.println("Error writing to file: " + e.getMessage());
+            System.err.println("Failed to export graph: " + e.getMessage());
         }
     }
 
-    private record Pair(String caller, String callee) {
-    }
 }
