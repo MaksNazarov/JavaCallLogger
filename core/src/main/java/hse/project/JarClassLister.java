@@ -1,5 +1,6 @@
 package hse.project;
 
+import hse.project.utils.ClassInstrumenter;
 import javassist.*;
 
 import java.io.*;
@@ -33,6 +34,7 @@ public class JarClassLister {
         ClassPool pool = ClassPool.getDefault();
         pool.insertClassPath(inputJar.getAbsolutePath());
 
+        ClassInstrumenter instrumenter = new ClassInstrumenter(pool, SKIP_EMPTY_BODIES);
         try (JarFile jarFile = new JarFile(inputJar);
              JarOutputStream jos = new JarOutputStream(new FileOutputStream(OUTPUT_JAR))) {
 
@@ -47,7 +49,7 @@ public class JarClassLister {
                             .replace(".class", "");
 
                     CtClass ctClass = pool.get(className);
-                    modifyMethods(ctClass);
+                    instrumenter.instrumentClass(ctClass);
 
                     JarEntry newEntry = new JarEntry(entryName);
                     jos.putNextEntry(newEntry);
@@ -66,74 +68,6 @@ public class JarClassLister {
 
             addCallLoggerClass(jos);
         }
-    }
-
-    private static void modifyMethods(CtClass ctClass) throws Exception {
-        CtClass loggerClass = ClassPool.getDefault().get("hse.project.CallLogger");
-        CtMethod logMethod = loggerClass.getDeclaredMethod("log");
-
-        for (CtMethod method : ctClass.getDeclaredMethods()) {
-            if (notInstrumented(method)) {
-                instrumentBehavior(method, loggerClass, logMethod);
-                markAsInstrumented(method);
-            }
-        }
-        for (CtConstructor ctor : ctClass.getDeclaredConstructors()) {
-            if (notInstrumented(ctor)) {
-                instrumentBehavior(ctor, loggerClass, logMethod);
-                markAsInstrumented(ctor);
-            }
-        }
-        // TODO: destructors
-    }
-
-    private static boolean notInstrumented(CtBehavior behavior) {
-        return !behavior.hasAnnotation(Instrumented.class);
-    }
-
-    private static void markAsInstrumented(CtBehavior behavior) {
-//        System.out.println("Marking as instrumented: " + behavior.getLongName());
-        javassist.bytecode.ConstPool constPool = behavior.getMethodInfo().getConstPool();
-        javassist.bytecode.AnnotationsAttribute attr =
-                new javassist.bytecode.AnnotationsAttribute(constPool, javassist.bytecode.AnnotationsAttribute.visibleTag);
-
-        javassist.bytecode.annotation.Annotation ann =
-                new javassist.bytecode.annotation.Annotation(Instrumented.class.getName(), constPool);
-//        System.out.println("Annotation created: " + ann);
-
-        attr.addAnnotation(ann);
-        behavior.getMethodInfo().addAttribute(attr);
-    }
-
-    private static void instrumentBehavior(CtBehavior behavior,
-                                           CtClass loggerClass,
-                                           CtMethod logMethod) throws Exception {
-        if (SKIP_EMPTY_BODIES && behavior.isEmpty()) return;
-
-        String beforeBlock = getBeforeBlock(behavior, loggerClass, logMethod);
-        behavior.insertBefore(beforeBlock);
-    }
-
-    private static String getBeforeBlock(CtBehavior behavior, CtClass loggerClass, CtMethod logMethod) {
-        String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
-                "String caller = (stack.length > 2) ? " +
-                "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
-
-        String callee = String.format(
-                "%s::%s",
-                behavior.getDeclaringClass().getName(),
-                behavior.getName()
-        );
-
-        String logCall = String.format(
-                "{ %s.%s(%s, %s);}",
-                loggerClass.getName(),
-                logMethod.getName(),
-                "caller",
-                wrap(callee)
-        );
-
-        return "{" + callerInit + logCall + "}";
     }
 
     private static void addCallLoggerClass(JarOutputStream jos) throws Exception {
