@@ -18,7 +18,7 @@ public class CallLogger {
     private static final CallGraph callGraph = new CallGraph();
     private static final GraphExporter exporter;
 
-    private static String OUTPUT_FILENAME = "calls.txt";
+    private static String OUTPUT_FILENAME = "calls.txt"; // FIXME: remove
 
     static {
         exporter = GraphExporterFactory.createExporter(exporterType);
@@ -63,8 +63,9 @@ public class CallLogger {
     }
 
     public static void dump() {
+        String outputFile = System.getProperty("callgraph.output", "calls.txt");
         try {
-            exporter.export(callGraph, OUTPUT_FILENAME);
+            exporter.export(callGraph, outputFile);
         } catch (IOException e) {
             System.err.println("Failed to export graph: " + e.getMessage());
         }
