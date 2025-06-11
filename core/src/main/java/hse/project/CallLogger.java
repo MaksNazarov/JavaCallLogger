@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.Set;
 
 public class CallLogger {
-    private static final String exporterType = "simple";
     private static final Set<String> EXCLUDED_PACKAGES = Set.of(
             "java.", "javax.", "jdk.", "sun.",
             "com.sun.", "org.xml.", "org.w3c.",
@@ -16,12 +15,8 @@ public class CallLogger {
     ); // TODO: make runtime-applied: read from config file, save in instrumented JAR dynamically
 
     private static final CallGraph callGraph = new CallGraph();
-    private static final GraphExporter exporter;
-
-    private static String OUTPUT_FILENAME = "calls.txt"; // FIXME: remove
 
     static {
-        exporter = GraphExporterFactory.createExporter(exporterType);
         Runtime.getRuntime().addShutdownHook(new Thread(CallLogger::dump));
     }
 
@@ -58,12 +53,11 @@ public class CallLogger {
         return false;
     }
 
-    public static void setOutputFilename(String filename) {
-        OUTPUT_FILENAME = filename;
-    }
-
     public static void dump() {
+        String exporterType = System.getProperty("callgraph.exporterType", "simple"); // FIXME: restore to class variables after resolving issue with maven plugin configs
+        GraphExporter exporter = GraphExporterFactory.createExporter(exporterType);
         String outputFile = System.getProperty("callgraph.output", "calls.txt");
+        System.out.println(exporterType);
         try {
             exporter.export(callGraph, outputFile);
         } catch (IOException e) {

@@ -21,9 +21,6 @@ public class JarClassLister {
     public static void main(String[] args) throws Exception {
         if (args.length >= 1) INPUT_JAR = args[0];
         if (args.length >= 2) OUTPUT_JAR = args[1];
-        if (args.length >= 3) {
-            CallLogger.setOutputFilename(args[2]); // FIXME: ofc doesn't work, should edit the CallLogger entry directly and/or use config file
-        }
 
         File inputJar = new File(INPUT_JAR);
         if (!inputJar.exists()) {

@@ -7,6 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import hse.project.utils.ClassInstrumenter;
 
@@ -14,7 +15,6 @@ import java.io.*;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.file.*;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -24,20 +24,29 @@ public class CallGraphInstrumentMojo extends AbstractMojo {
     
     @Component
     private MavenProject project;
-    
+
+    @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
     private File outputDirectory;
-    private static final Boolean SKIP_EMPTY_BODIES = false; // TODO: cleaner config
+
+    @Parameter(property = "callgraph.exporterType", defaultValue = "simple")
+    private String exporterType;
+
+    @Parameter(property = "callgraph.skipEmptyBodies", defaultValue = "false")
+    private boolean skipEmptyBodies;
+
     private ClassPool pool;
     private ClassInstrumenter instrumenter;
 
     public void execute() throws MojoExecutionException {
+        System.setProperty("callgraph.exporterType", exporterType); // TODO: better style? Pass as param to instrumentClass?
+
         outputDirectory = new File(project.getBuild().getOutputDirectory());
         getLog().info("Instrumenting classes in: " + outputDirectory.getAbsolutePath());
         
         try {
             pool = ClassPool.getDefault();
             pool.appendClassPath(outputDirectory.getAbsolutePath());
-            instrumenter = new ClassInstrumenter(pool, SKIP_EMPTY_BODIES);
+            instrumenter = new ClassInstrumenter(pool, skipEmptyBodies);
 
             Files.walk(outputDirectory.toPath())
                     .filter(Files::isRegularFile)
