@@ -14,7 +14,7 @@ public class DotExporter implements GraphExporter {
             writer.write("digraph CallGraph {\n");
             for (Edge edge : graph.getEdges()) {
                 writer.write(String.format("    \"%s\" -> \"%s\" [weight=%d];\n",
-                        edge.source(), edge.target(), edge.weight()));
+                        edge.source, edge.target, edge.weight));
             }
             writer.write("}\n");
         }

@@ -1,6 +1,5 @@
 package hse.project.maven;
 
-import hse.project.Instrumented;
 import javassist.*;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;

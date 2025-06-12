@@ -17,8 +17,8 @@ public class SimpleExporter implements GraphExporter{
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             Set<String> nodes = ConcurrentHashMap.newKeySet();
             for (Edge edge : graph.getEdges()) {
-                nodes.add(edge.source());
-                nodes.add(edge.target());
+                nodes.add(edge.source);
+                nodes.add(edge.target);
             }
 
             writer.write(nodes.size() + " " + graph.getEdgeCount());
@@ -26,9 +26,9 @@ public class SimpleExporter implements GraphExporter{
             for (Edge entry : graph.getEdges()) {
                 writer.write(String.format(
                         "%s %s %d",
-                        entry.source(),
-                        entry.target(),
-                        entry.weight()
+                        entry.source,
+                        entry.target,
+                        entry.weight
                 ));
                 writer.newLine();
             }

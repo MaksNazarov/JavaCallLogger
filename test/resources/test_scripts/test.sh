@@ -1,14 +1,12 @@
 #!/bin/bash
 
-APP_NAME="simple-app"
-MAIN_CLASS="simpleapp.Main"
-# APP_NAME="simple-app"
-# MAIN_CLASS="simpleapp.Main"
+APP_NAME="inheritance-app"
+MAIN_CLASS="inheritanceapp.Main"
 OUTPUT_FILE="calls.txt"
 MODE="$1"
 DIFF_FILE="diff-output.txt"
 
-TEST_APPS_DIR="core/src/test/resources/test-apps"
+TEST_APPS_DIR="test/resources/test-apps"
 APP_DIR="$TEST_APPS_DIR/$APP_NAME"
 INPUT_JAR="$APP_DIR/app.jar"
 MODIFIED_JAR="$APP_DIR/modified_app.jar"
