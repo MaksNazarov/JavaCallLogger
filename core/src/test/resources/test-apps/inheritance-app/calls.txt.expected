@@ -1,0 +1,14 @@
+15 13
+inheritanceapp.Main::main inheritanceapp.Truck::Truck 1
+inheritanceapp.Main::main inheritanceapp.Car::Car 1
+inheritanceapp.Main::main inheritanceapp.Car::start 1
+inheritanceapp.Truck::<init> inheritanceapp.Truck::Truck 1
+inheritanceapp.Main::main inheritanceapp.Truck::start 1
+inheritanceapp.Main::main inheritanceapp.Plane::start 1
+inheritanceapp.Main::logVehicle inheritanceapp.Car::getManufacturer 1
+inheritanceapp.Main::logVehicle inheritanceapp.Aircraft::getWingspan 1
+inheritanceapp.Plane::<init> inheritanceapp.Aircraft::Aircraft 1
+inheritanceapp.Main::logVehicle inheritanceapp.Truck::getManufacturer 1
+<unknown> inheritanceapp.Main::main 1
+inheritanceapp.Main::main inheritanceapp.Plane::Plane 1
+inheritanceapp.Main::main inheritanceapp.Main::logVehicle 3

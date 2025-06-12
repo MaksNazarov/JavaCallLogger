@@ -17,6 +17,10 @@ public class ClassInstrumenter {
     }
 
     public void instrumentClass(CtClass ctClass) throws Exception {
+        if (ctClass.isInterface()) {
+            return;
+        }
+
         CtClass loggerClass = pool.get(CallLogger.class.getName());
         CtMethod logMethod = loggerClass.getDeclaredMethod("log");
 
