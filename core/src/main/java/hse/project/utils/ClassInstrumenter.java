@@ -25,24 +25,30 @@ public class ClassInstrumenter {
         CtMethod logMethod = loggerClass.getDeclaredMethod("log");
 
         for (CtMethod method : ctClass.getDeclaredMethods()) {
-            if (notInstrumented(method)) {
+            if (canInstrument(method)) {
                 instrumentBehavior(method, loggerClass, logMethod);
                 markAsInstrumented(method);
             }
         }
         
-        for (CtConstructor ctor : ctClass.getDeclaredConstructors()) {
-            if (notInstrumented(ctor)) {
-                instrumentBehavior(ctor, loggerClass, logMethod);
-                markAsInstrumented(ctor);
+        if (!Modifier.isAbstract(ctClass.getModifiers())) {
+            for (CtConstructor ctor : ctClass.getDeclaredConstructors()) {
+                if (canInstrument(ctor)) {
+                    instrumentBehavior(ctor, loggerClass, logMethod);
+                    markAsInstrumented(ctor);
+                }
             }
         }
-
-        // TODO: destructors
     }
 
-    private boolean notInstrumented(CtBehavior behavior) {
-        return !behavior.hasAnnotation(Instrumented.class);
+    private boolean canInstrument(CtBehavior behavior) {
+        try {
+            return !behavior.hasAnnotation(Instrumented.class) &&
+                !Modifier.isAbstract(behavior.getModifiers()) &&
+                (!skipEmptyBodies || !behavior.isEmpty());
+        } catch (Exception e) {
+            return false; // TODO: refactor, bad style
+        }
     }
 
     public void markAsInstrumented(CtBehavior behavior) throws CannotCompileException {
