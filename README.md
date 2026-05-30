@@ -52,4 +52,6 @@ Now you have 2 usage options.
 
     3. Now you can use Maven to build/run your project as usual, and each time you run it, the "calls.txt" is created.
 
-    Check out docs for more info on pom.xml config options and various other features to use in your project. TODO: finish.
+    Check out docs for more info on pom.xml config options and various other features to use in your project. 
+    
+TODO: finish description.
