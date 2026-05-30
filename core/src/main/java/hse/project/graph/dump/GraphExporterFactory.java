@@ -5,6 +5,7 @@ public class GraphExporterFactory {
         switch (format.toLowerCase()) {
             case "dot": return new DotExporter();
             case "simple": return new SimpleExporter();
+            case "graphml": return new GraphMLExporter();
             default:
                 throw new IllegalArgumentException("Unsupported format: " + format);
         }
