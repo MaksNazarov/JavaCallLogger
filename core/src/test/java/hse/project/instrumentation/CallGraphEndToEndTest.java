@@ -1,0 +1,143 @@
+package hse.project.instrumentation;
+
+import hse.project.JarClassLister;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import javax.tools.JavaCompiler;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * E2E test (compile -> package -> instrument -> run -> check output) for a single test app
+ * TODO: update description
+ */
+class CallGraphEndToEndTest {
+
+    @Test
+    void simpleAppProducesExpectedGraph(@TempDir Path work) throws Exception {
+        Path appDir = locateApp("simple-app");
+        Set<String> actual = runPipeline(appDir, "simpleapp.Main", work);
+        Set<String> expected = parseEdges(appDir.resolve("calls.txt.expected"));
+
+        assertEquals(expected, actual,
+                "recorded edge set differs from " + appDir.resolve("calls.txt.expected"));
+    }
+
+    // returns resulting edge set
+    private Set<String> runPipeline(Path appDir, String mainClass, Path work) throws Exception {
+        Path classes = work.resolve("classes");
+        Path appJar = work.resolve("app.jar");
+        Path modifiedJar = work.resolve("modified_app.jar");
+        Path calls = work.resolve("calls.txt");
+
+        compile(appDir.resolve("src"), classes);
+        buildJar(classes, mainClass, appJar);
+        JarClassLister.instrument(appJar.toFile(), modifiedJar.toFile());
+        runJar(modifiedJar, calls, work);
+
+        assertTrue(Files.exists(calls), "instrumented run did not produce " + calls);
+        return parseEdges(calls);
+    }
+
+    private void compile(Path srcDir, Path outDir) throws IOException {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertNotNull(compiler);
+        Files.createDirectories(outDir);
+
+        List<Path> sources;
+        try (Stream<Path> walk = Files.walk(srcDir)) {
+            sources = walk.filter(p -> p.toString().endsWith(".java")).collect(Collectors.toList());
+        }
+        assertTrue(!sources.isEmpty(), "no .java sources under " + srcDir);
+
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            fm.setLocation(StandardLocation.CLASS_OUTPUT, List.of(outDir.toFile()));
+            boolean ok = compiler.getTask(null, fm, null, null, null,
+                    fm.getJavaFileObjectsFromPaths(sources)).call();
+            assertTrue(ok, "compilation failed for " + srcDir);
+        }
+    }
+
+    private void buildJar(Path classesDir, String mainClass, Path jarPath) throws IOException {
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
+
+        try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(jarPath), manifest);
+             Stream<Path> walk = Files.walk(classesDir)) {
+            List<Path> files = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+            for (Path file : files) {
+                String entryName = classesDir.relativize(file).toString().replace('\\', '/');
+                jos.putNextEntry(new java.util.jar.JarEntry(entryName));
+                Files.copy(file, jos);
+                jos.closeEntry();
+            }
+        }
+    }
+
+    private void runJar(Path jar, Path callsOutput, Path workDir) throws IOException, InterruptedException {
+        String javaBin = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
+        ProcessBuilder pb = new ProcessBuilder(
+                javaBin,
+                "-Dcallgraph.output=" + callsOutput.toAbsolutePath(),
+                "-Dcallgraph.exporterType=simple",
+                "-jar", jar.toAbsolutePath().toString());
+        pb.directory(workDir.toFile());
+        pb.redirectErrorStream(true);
+
+        Process process = pb.start();
+        String output;
+        try (InputStream is = process.getInputStream()) {
+            output = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        int exit = process.waitFor();
+        assertEquals(0, exit, "instrumented app exited non-zero. Output:\n" + output);
+    }
+
+    // TODO: support for diff formats? Or enforce + write somewhere abt .expected using my fmt
+    private Set<String> parseEdges(Path file) throws IOException {
+        Set<String> edges = new HashSet<>();
+        for (String line : Files.readAllLines(file)) {
+            String[] parts = line.trim().split("\\s+");
+            if (parts.length == 3) {
+                edges.add(parts[0] + " " + parts[1] + " " + parts[2]);
+            }
+        }
+        return edges;
+    }
+
+    // TODO: drop once test refactoring finished
+    private Path locateApp(String name) {
+        List<Path> candidates = new ArrayList<>();
+        candidates.add(Paths.get("test", "resources", "test-apps", name));
+        candidates.add(Paths.get("..", "test", "resources", "test-apps", name));
+        for (Path candidate : candidates) {
+            if (Files.isDirectory(candidate)) {
+                return candidate.toAbsolutePath().normalize();
+            }
+        }
+        throw new IllegalStateException("could not locate test app '" + name + "' from " +
+                Paths.get("").toAbsolutePath());
+    }
+}
