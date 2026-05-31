@@ -17,7 +17,10 @@ public class CallLogger {
     private static final CallGraph callGraph = new CallGraph();
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(CallLogger::dump));
+        // auto-dump on JVM exit; disabled for specific tests
+        if (Boolean.parseBoolean(System.getProperty("callgraph.dumpOnShutdown", "true"))) {
+            Runtime.getRuntime().addShutdownHook(new Thread(CallLogger::dump));
+        }
     }
 
     public static void log(String caller, String callee) {
