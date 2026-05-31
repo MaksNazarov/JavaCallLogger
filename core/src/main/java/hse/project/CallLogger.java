@@ -53,11 +53,18 @@ public class CallLogger {
         return false;
     }
 
+    public static CallGraph snapshot() {
+        return callGraph;
+    }
+
+    public static void reset() {
+        callGraph.clear();
+    }
+
     public static void dump() {
         String exporterType = System.getProperty("callgraph.exporterType", "simple"); // FIXME: restore to class variables after resolving issue with maven plugin configs
         GraphExporter exporter = GraphExporterFactory.createExporter(exporterType);
         String outputFile = System.getProperty("callgraph.output", "calls.txt");
-        System.out.println(exporterType);
         try {
             exporter.export(callGraph, outputFile);
         } catch (IOException e) {

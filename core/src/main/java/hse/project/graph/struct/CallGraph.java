@@ -39,6 +39,10 @@ public class CallGraph {
         return graph.size();
     }
 
+    public void clear() {
+        graph.clear();
+    }
+
     public List<Edge> getEdges() {
         return graph.entrySet().stream()
                 .map(entry -> new Edge(
