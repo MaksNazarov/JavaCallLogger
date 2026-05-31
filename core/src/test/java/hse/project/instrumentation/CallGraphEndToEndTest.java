@@ -29,19 +29,52 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * E2E test (compile -> package -> instrument -> run -> check output) for a single test app
- * TODO: update description
+ * E2E test (compile -> package -> instrument -> run -> check output) for each bundled
+ * test app under test/resources/test-apps
  */
 class CallGraphEndToEndTest {
 
     @Test
-    void simpleAppProducesExpectedGraph(@TempDir Path work) throws Exception {
-        Path appDir = locateApp("simple-app");
-        Set<String> actual = runPipeline(appDir, "simpleapp.Main", work);
+    void simpleApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("simple-app", "simpleapp.Main", work);
+    }
+
+    @Test
+    void lambdaApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("lambda-app", "lambdaapp.Main", work);
+    }
+
+    @Test
+    void recursiveApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("recursive-app", "recursiveapp.Main", work);
+    }
+
+    @Test
+    void multithreadApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("multithread-app", "multithreadapp.Main", work);
+    }
+
+    @Test
+    void inheritanceApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("inheritance-app", "inheritanceapp.Main", work);
+    }
+
+    @Test
+    void java8App(@TempDir Path work) throws Exception {
+        assertGraphMatches("java8-app", "java8app.Main", work);
+    }
+
+    @Test
+    void java17App(@TempDir Path work) throws Exception {
+        assertGraphMatches("java17-app", "java17app.Main", work);
+    }
+
+    private void assertGraphMatches(String appName, String mainClass, Path work) throws Exception {
+        Path appDir = locateApp(appName);
+        Set<String> actual = runPipeline(appDir, mainClass, work);
         Set<String> expected = parseEdges(appDir.resolve("calls.txt.expected"));
 
-        assertEquals(expected, actual,
-                "recorded edge set differs from " + appDir.resolve("calls.txt.expected"));
+        assertEquals(expected, actual, "recorded edge set differs for " + appName);
     }
 
     // returns resulting edge set

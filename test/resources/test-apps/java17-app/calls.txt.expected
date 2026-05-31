@@ -1,0 +1,7 @@
+7 6
+java17app.Main::main java17app.Main$1Point::x 1
+java17app.Main::main java17app.Main$1Point::Main$1Point 1
+java17app.Main::main java17app.Main$1Point::y 1
+java17app.Main::main java17app.Main::Main 1
+java17app.Main::main java17app.Main::demoMethod 1
+<unknown> java17app.Main::main 1
