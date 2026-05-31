@@ -28,12 +28,16 @@ public class JarClassLister {
             return;
         }
 
-        ClassPool pool = ClassPool.getDefault();
+        instrument(inputJar, new File(OUTPUT_JAR));
+    }
+
+    public static void instrument(File inputJar, File outputJar) throws Exception {
+        ClassPool pool = new ClassPool(true);
         pool.insertClassPath(inputJar.getAbsolutePath());
 
         ClassInstrumenter instrumenter = new ClassInstrumenter(pool, SKIP_EMPTY_BODIES);
         try (JarFile jarFile = new JarFile(inputJar);
-             JarOutputStream jos = new JarOutputStream(new FileOutputStream(OUTPUT_JAR))) {
+             JarOutputStream jos = new JarOutputStream(new FileOutputStream(outputJar))) {
 
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
