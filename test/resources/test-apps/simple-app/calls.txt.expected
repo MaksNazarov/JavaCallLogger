@@ -1,5 +1,4 @@
-5 4
+4 3
 simpleapp.Main::main simpleapp.Greeter::Greeter 1
-<unknown> simpleapp.Main::main 1
-simpleapp.Main::main simpleapp.B::b 2
 simpleapp.Main::main simpleapp.Greeter::greet 1
+simpleapp.Main::main simpleapp.B::b 2

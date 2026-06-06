@@ -3,6 +3,7 @@ package lambdaapp;
 import java.util.Arrays;
 import java.util.List;
 
+ // TODO: lambda graph writing: add setting for switching behaviour b/w separating and merging lambda calls
 public class Main {
     public static void main(String[] args) {
         List<String> names = List.of("Alice", "Bob", "Charlie");

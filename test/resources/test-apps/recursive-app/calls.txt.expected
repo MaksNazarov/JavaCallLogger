@@ -1,4 +1,3 @@
-3 3
-recursiveapp.Main::factorial recursiveapp.Main::factorial 2
-<unknown> recursiveapp.Main::main 1
+2 2
 recursiveapp.Main::main recursiveapp.Main::factorial 1
+recursiveapp.Main::factorial recursiveapp.Main::factorial 2
