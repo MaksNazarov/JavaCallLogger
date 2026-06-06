@@ -5,6 +5,8 @@ import hse.project.graph.dump.GraphExporterFactory;
 import hse.project.graph.struct.CallGraph;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Set;
 
 public class CallLogger {
@@ -16,6 +18,9 @@ public class CallLogger {
 
     private static final CallGraph callGraph = new CallGraph();
 
+    private static final ThreadLocal<Deque<String>> CALL_STACK =
+            ThreadLocal.withInitial(ArrayDeque::new);
+
     static {
         // auto-dump on JVM exit; disabled for specific tests
         if (Boolean.parseBoolean(System.getProperty("callgraph.dumpOnShutdown", "true"))) {
@@ -23,14 +28,31 @@ public class CallLogger {
         }
     }
 
-    public static void log(String caller, String callee) {
-        if (isExcluded(caller) || isExcluded(callee)) {
-            return;
+    public static void enter(String callee) {
+        Deque<String> stack = CALL_STACK.get();
+        String caller = stack.peek();
+        if (caller != null) {
+            // null caller means it's an entry point, so no edge
+            recordEdge(caller, callee);
         }
+        stack.push(callee);
+    }
 
+    public static void exit() {
+        Deque<String> stack = CALL_STACK.get();
+        if (!stack.isEmpty()) {
+            stack.pop();
+        }
+    }
+
+    private static void recordEdge(String caller, String callee) {
         // map lambda methods to the enclosing method for better graph readability
         if (caller.contains("lambda$")) {
             caller = lambdaNameToEnclosingName(caller);
+        }
+
+        if (isExcluded(caller) || isExcluded(callee)) {
+            return;
         }
 
         // TODO: caller thread info? Thread.currentThread().getName()
@@ -62,6 +84,7 @@ public class CallLogger {
 
     public static void reset() {
         callGraph.clear();
+        CALL_STACK.get().clear();
     }
 
     public static void dump() {

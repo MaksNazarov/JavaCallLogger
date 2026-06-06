@@ -22,19 +22,18 @@ public class ClassInstrumenter {
         }
 
         CtClass loggerClass = pool.get(CallLogger.class.getName());
-        CtMethod logMethod = loggerClass.getDeclaredMethod("log");
 
         for (CtMethod method : ctClass.getDeclaredMethods()) {
             if (canInstrument(method)) {
-                instrumentBehavior(method, loggerClass, logMethod);
+                instrumentBehavior(method, loggerClass);
                 markAsInstrumented(method);
             }
         }
-        
+
         if (!Modifier.isAbstract(ctClass.getModifiers())) {
             for (CtConstructor ctor : ctClass.getDeclaredConstructors()) {
                 if (canInstrument(ctor)) {
-                    instrumentBehavior(ctor, loggerClass, logMethod);
+                    instrumentBehavior(ctor, loggerClass);
                     markAsInstrumented(ctor);
                 }
             }
@@ -62,29 +61,17 @@ public class ClassInstrumenter {
         behavior.getMethodInfo().addAttribute(attr);
     }
 
-    private void instrumentBehavior(CtBehavior behavior, 
-                                   CtClass loggerClass, 
-                                   CtMethod logMethod) throws CannotCompileException {
+    private void instrumentBehavior(CtBehavior behavior,
+                                   CtClass loggerClass) throws CannotCompileException {
         if (skipEmptyBodies && behavior.isEmpty()) return;
-        
-        String callerInit = "StackTraceElement[] stack = Thread.currentThread().getStackTrace();" +
-                           "String caller = (stack.length > 2) ? " +
-                           "stack[2].getClassName() + \"::\" + stack[2].getMethodName() : \"<unknown>\";";
-        
+
         String callee = String.format(
-            "\"%s::%s\"", 
-            behavior.getDeclaringClass().getName(), 
+            "\"%s::%s\"",
+            behavior.getDeclaringClass().getName(),
             behavior.getName()
         );
-        
-        String logCall = String.format(
-            "{%s %s.%s(caller, %s);}",
-            callerInit,
-            loggerClass.getName(),
-            logMethod.getName(),
-            callee
-        );
-        
-        behavior.insertBefore(logCall);
+
+        behavior.insertBefore(loggerClass.getName() + ".enter(" + callee + ");");
+        behavior.insertAfter(loggerClass.getName() + ".exit();", true);
     }
 }
