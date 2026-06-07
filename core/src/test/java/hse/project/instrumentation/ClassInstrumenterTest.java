@@ -8,7 +8,10 @@ import javassist.CtClass;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -72,5 +75,28 @@ class ClassInstrumenterTest {
                 "expected edge testapp.App::entry()V -> testapp.App::helper()V, got: " + edges);
         assertTrue(callsIntHelper,
                 "expected edge testapp.App::entry()V -> testapp.App::helper(I)V, got: " + edges);
+    }
+
+    @Test
+    void encodesComplexArgumentListsInNodeIdentity() throws Exception {
+        List<Edge> edges = instrumentAndRunEntry("testapp.Signatures");
+
+        Set<String> callees = edges.stream()
+                .filter(e -> e.source.equals("testapp.Signatures::entry()V"))
+                .map(e -> e.target)
+                .collect(Collectors.toSet());
+
+        Set<String> expected = Set.of(
+                "testapp.Signatures::withCustomClass(Ltestapp/Signatures;)V",
+                "testapp.Signatures::withCustomArray([Ltestapp/Signatures;)V",
+                "testapp.Signatures::withMixed(ILjava/lang/String;Ltestapp/Signatures;)V",
+                "testapp.Signatures::withGenerics(Ljava/util/List;)V",
+                "testapp.Signatures::withMultiDimArray([[I)V",
+                "testapp.Signatures::withPrimitives(IJD)I",
+                "testapp.Signatures::makeSelf()Ltestapp/Signatures;"
+        );
+
+        assertEquals(expected, callees,
+                "descriptors recorded for entry()'s callees differ from expected");
     }
 }
