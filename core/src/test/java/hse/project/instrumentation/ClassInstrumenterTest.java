@@ -42,10 +42,7 @@ class ClassInstrumenterTest {
         }
     }
 
-    @Test
-    void recordsEdgeBetweenInstrumentedMethods() throws Exception { // TODO: extract pool/loader logic into helper methods?
-        String className = "testapp.App"; // TODO: to test args
-
+    private List<Edge> instrumentAndRunEntry(String className) throws Exception {
         ClassPool pool = new ClassPool(true);
         CtClass ctClass = pool.get(className);
         new ClassInstrumenter(pool, false).instrumentClass(ctClass);
@@ -59,11 +56,21 @@ class ClassInstrumenterTest {
         Object instance = loaded.getDeclaredConstructor().newInstance();
         loaded.getMethod("entry").invoke(instance);
 
-        List<Edge> edges = CallLogger.snapshot().getEdges();
-        boolean hasInternalEdge = edges.stream().anyMatch(e ->
-                e.source.equals("testapp.App::entry") && e.target.equals("testapp.App::helper"));
+        return CallLogger.snapshot().getEdges();
+    }
 
-        assertTrue(hasInternalEdge,
-                "expected edge testapp.App::entry -> testapp.App::helper, got: " + edges);
+    @Test
+    void recordsEdgeBetweenInstrumentedMethods() throws Exception {
+        List<Edge> edges = instrumentAndRunEntry("testapp.App");
+
+        boolean callsNoArgHelper = edges.stream().anyMatch(e ->
+                e.source.equals("testapp.App::entry()V") && e.target.equals("testapp.App::helper()V"));
+        boolean callsIntHelper = edges.stream().anyMatch(e ->
+                e.source.equals("testapp.App::entry()V") && e.target.equals("testapp.App::helper(I)V"));
+
+        assertTrue(callsNoArgHelper,
+                "expected edge testapp.App::entry()V -> testapp.App::helper()V, got: " + edges);
+        assertTrue(callsIntHelper,
+                "expected edge testapp.App::entry()V -> testapp.App::helper(I)V, got: " + edges);
     }
 }
