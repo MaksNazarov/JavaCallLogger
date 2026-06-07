@@ -46,11 +46,6 @@ public class CallLogger {
     }
 
     private static void recordEdge(String caller, String callee) {
-        // map lambda methods to the enclosing method for better graph readability
-        if (caller.contains("lambda$")) {
-            caller = lambdaNameToEnclosingName(caller);
-        }
-
         if (isExcluded(caller) || isExcluded(callee)) {
             return;
         }
@@ -58,15 +53,6 @@ public class CallLogger {
         // TODO: caller thread info? Thread.currentThread().getName()
 
         callGraph.addEdge(caller, callee);
-    }
-
-    private static String lambdaNameToEnclosingName(String name) {
-        String[] parts = name.split("\\$");
-        if (parts.length == 1) {
-            return parts[0]; // no $ encountered, a normal method name
-        } else {
-            return parts[0].substring(0, parts[0].lastIndexOf("lambda")) + parts[1];
-        }
     }
 
     public static boolean isExcluded(String className) {

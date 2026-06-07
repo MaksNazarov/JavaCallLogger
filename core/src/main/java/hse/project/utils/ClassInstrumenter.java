@@ -66,9 +66,10 @@ public class ClassInstrumenter {
         if (skipEmptyBodies && behavior.isEmpty()) return;
 
         String callee = String.format(
-            "\"%s::%s\"",
+            "\"%s::%s%s\"",
             behavior.getDeclaringClass().getName(),
-            behavior.getName()
+            behavior.getName(),
+            behavior.getSignature()
         );
 
         behavior.insertBefore(loggerClass.getName() + ".enter(" + callee + ");");

@@ -1,6 +1,7 @@
-6 5
-lambdaapp.Main::main lambdaapp.A::call 12
-lambdaapp.Main::main lambdaapp.Main::lambda$main$0 3
-lambdaapp.Main::main lambdaapp.Main::lambda$main$1 1
-lambdaapp.Main::main lambdaapp.Main::lambda$main$2 11
-lambdaapp.Main::main lambdaapp.Main::lambda$main$3 2
+6 6
+lambdaapp.Main::main([Ljava/lang/String;)V lambdaapp.Main::lambda$main$0(Ljava/lang/String;)Z 3
+lambdaapp.Main::main([Ljava/lang/String;)V lambdaapp.Main::lambda$main$1(Ljava/lang/String;)V 1
+lambdaapp.Main::lambda$main$1(Ljava/lang/String;)V lambdaapp.A::call(Ljava/lang/String;)V 1
+lambdaapp.Main::main([Ljava/lang/String;)V lambdaapp.Main::lambda$main$3(Ljava/lang/String;)V 2
+lambdaapp.Main::lambda$main$3(Ljava/lang/String;)V lambdaapp.Main::lambda$main$2(I)V 11
+lambdaapp.Main::lambda$main$2(I)V lambdaapp.A::call(Ljava/lang/String;)V 11

@@ -1,12 +1,12 @@
-11 11
-inheritanceapp.Main::main inheritanceapp.Car::Car 1
-inheritanceapp.Main::main inheritanceapp.Truck::Truck 1
-inheritanceapp.Truck::Truck inheritanceapp.Truck::Truck 1
-inheritanceapp.Main::main inheritanceapp.Plane::Plane 1
-inheritanceapp.Main::main inheritanceapp.Car::start 1
-inheritanceapp.Main::main inheritanceapp.Truck::start 1
-inheritanceapp.Main::main inheritanceapp.Plane::start 1
-inheritanceapp.Main::main inheritanceapp.Main::logVehicle 3
-inheritanceapp.Main::logVehicle inheritanceapp.Car::getManufacturer 1
-inheritanceapp.Main::logVehicle inheritanceapp.Truck::getManufacturer 1
-inheritanceapp.Main::logVehicle inheritanceapp.Aircraft::getWingspan 1
+12 11
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Car::Car(Ljava/lang/String;)V 1
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Truck::Truck(Ljava/lang/String;)V 1
+inheritanceapp.Truck::Truck(Ljava/lang/String;)V inheritanceapp.Truck::Truck(Ljava/lang/String;D)V 1
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Plane::Plane(Ljava/lang/String;)V 1
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Car::start()V 1
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Truck::start()V 1
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Plane::start()V 1
+inheritanceapp.Main::main([Ljava/lang/String;)V inheritanceapp.Main::logVehicle(Linheritanceapp/Vehicle;)V 3
+inheritanceapp.Main::logVehicle(Linheritanceapp/Vehicle;)V inheritanceapp.Car::getManufacturer()Ljava/lang/String; 1
+inheritanceapp.Main::logVehicle(Linheritanceapp/Vehicle;)V inheritanceapp.Truck::getManufacturer()Ljava/lang/String; 1
+inheritanceapp.Main::logVehicle(Linheritanceapp/Vehicle;)V inheritanceapp.Aircraft::getWingspan()D 1

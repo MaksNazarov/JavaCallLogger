@@ -1,5 +1,5 @@
 5 4
-java8app.Main::main java8app.Main::lambda$main$0 1
-java8app.Main::main java8app.Main::nestedCall 1
-java8app.Main::nestedCall java8app.Main::Main 1
-java8app.Main::nestedCall java8app.Main::instanceMethod 1
+java8app.Main::main([Ljava/lang/String;)V java8app.Main::lambda$main$0()V 1
+java8app.Main::lambda$main$0()V java8app.Main::nestedCall()V 1
+java8app.Main::nestedCall()V java8app.Main::Main()V 1
+java8app.Main::nestedCall()V java8app.Main::instanceMethod()V 1

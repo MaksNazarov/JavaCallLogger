@@ -1,4 +1,4 @@
 4 3
-simpleapp.Main::main simpleapp.Greeter::Greeter 1
-simpleapp.Main::main simpleapp.Greeter::greet 1
-simpleapp.Main::main simpleapp.B::b 2
+simpleapp.Main::main([Ljava/lang/String;)V simpleapp.Greeter::Greeter()V 1
+simpleapp.Main::main([Ljava/lang/String;)V simpleapp.Greeter::greet()V 1
+simpleapp.Main::main([Ljava/lang/String;)V simpleapp.B::b()V 2
