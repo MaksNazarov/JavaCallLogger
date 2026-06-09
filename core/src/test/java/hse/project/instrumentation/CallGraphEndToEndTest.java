@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,6 +70,24 @@ class CallGraphEndToEndTest {
         assertGraphMatches("java17-app", "java17app.Main", work);
     }
 
+    @Test
+    void threadNameFlagPrefixesNodes(@TempDir Path work) throws Exception {
+        Path appDir = locateApp("simple-app");
+        Set<String> edges = runPipeline(appDir, "simpleapp.Main", work,
+                "-Dcallgraph.includeThreadName=true");
+
+        assertFalse(edges.isEmpty(), "expected some edges for simple-app");
+        for (String edge : edges) {
+            String[] parts = edge.split("\\s+");
+            assertTrue(parts[0].startsWith("main@"),
+                    "caller node missing thread prefix: " + edge);
+            assertTrue(parts[1].startsWith("main@"),
+                    "callee node missing thread prefix: " + edge);
+        }
+    }
+
+    // TODO: add instrumenter test w/ thread names enabled for multithreaded app
+
     private void assertGraphMatches(String appName, String mainClass, Path work) throws Exception {
         Path appDir = locateApp(appName);
         Set<String> actual = runPipeline(appDir, mainClass, work);
@@ -78,7 +97,7 @@ class CallGraphEndToEndTest {
     }
 
     // returns resulting edge set
-    private Set<String> runPipeline(Path appDir, String mainClass, Path work) throws Exception {
+    private Set<String> runPipeline(Path appDir, String mainClass, Path work, String... extraProps) throws Exception {
         Path classes = work.resolve("classes");
         Path appJar = work.resolve("app.jar");
         Path modifiedJar = work.resolve("modified_app.jar");
@@ -87,7 +106,7 @@ class CallGraphEndToEndTest {
         compile(appDir.resolve("src"), classes);
         buildJar(classes, mainClass, appJar);
         JarClassLister.instrument(appJar.toFile(), modifiedJar.toFile());
-        runJar(modifiedJar, calls, work);
+        runJar(modifiedJar, calls, work, extraProps);
 
         assertTrue(Files.exists(calls), "instrumented run did not produce " + calls);
         return parseEdges(calls);
@@ -129,13 +148,17 @@ class CallGraphEndToEndTest {
         }
     }
 
-    private void runJar(Path jar, Path callsOutput, Path workDir) throws IOException, InterruptedException {
+    private void runJar(Path jar, Path callsOutput, Path workDir, String... extraProps) throws IOException, InterruptedException {
         String javaBin = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
-        ProcessBuilder pb = new ProcessBuilder(
+        List<String> command = new ArrayList<>(List.of(
                 javaBin,
                 "-Dcallgraph.output=" + callsOutput.toAbsolutePath(),
-                "-Dcallgraph.exporterType=simple",
-                "-jar", jar.toAbsolutePath().toString());
+                "-Dcallgraph.exporterType=simple"));
+        command.addAll(List.of(extraProps));
+        command.add("-jar");
+        command.add(jar.toAbsolutePath().toString());
+
+        ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(workDir.toFile());
         pb.redirectErrorStream(true);
 

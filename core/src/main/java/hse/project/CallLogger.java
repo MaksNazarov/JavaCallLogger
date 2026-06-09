@@ -21,6 +21,9 @@ public class CallLogger {
     private static final ThreadLocal<Deque<String>> CALL_STACK =
             ThreadLocal.withInitial(ArrayDeque::new);
 
+    private static final boolean INCLUDE_THREAD_NAME =
+            Boolean.parseBoolean(System.getProperty("callgraph.includeThreadName", "false"));
+    // TODO: System.getProperty consistency: read into flags vs in-place
     static {
         // auto-dump on JVM exit; disabled for specific tests
         if (Boolean.parseBoolean(System.getProperty("callgraph.dumpOnShutdown", "true"))) {
@@ -29,6 +32,9 @@ public class CallLogger {
     }
 
     public static void enter(String callee) {
+        if (INCLUDE_THREAD_NAME) {
+            callee = Thread.currentThread().getName().replace(' ', '_') + "@" + callee;
+        }
         Deque<String> stack = CALL_STACK.get();
         String caller = stack.peek();
         if (caller != null) {
@@ -49,8 +55,6 @@ public class CallLogger {
         if (isExcluded(caller) || isExcluded(callee)) {
             return;
         }
-
-        // TODO: caller thread info? Thread.currentThread().getName()
 
         callGraph.addEdge(caller, callee);
     }
