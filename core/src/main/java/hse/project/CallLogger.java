@@ -1,7 +1,9 @@
 package hse.project;
 
+import hse.project.graph.dump.CctExporter;
 import hse.project.graph.dump.GraphExporter;
 import hse.project.graph.dump.GraphExporterFactory;
+import hse.project.graph.struct.CallContextTree;
 import hse.project.graph.struct.CallGraph;
 
 import java.io.IOException;
@@ -23,6 +25,15 @@ public class CallLogger {
 
     private static final boolean INCLUDE_THREAD_NAME =
             Boolean.parseBoolean(System.getProperty("callgraph.includeThreadName", "false"));
+
+    private static final boolean CONTEXT_SENSITIVE =
+            Boolean.parseBoolean(System.getProperty("callgraph.contextSensitive", "false"));
+
+    private static final CallContextTree contextTree = new CallContextTree();
+
+    private static final ThreadLocal<CallContextTree.Node> currentContext =
+            ThreadLocal.withInitial(() -> null);
+
     // TODO: System.getProperty consistency: read into flags vs in-place
     static {
         // auto-dump on JVM exit; disabled for specific tests
@@ -35,6 +46,14 @@ public class CallLogger {
         if (INCLUDE_THREAD_NAME) {
             callee = Thread.currentThread().getName().replace(' ', '_') + "@" + callee;
         }
+        if (CONTEXT_SENSITIVE) {
+            enterContext(callee);
+        } else {
+            enterFlat(callee);
+        }
+    }
+
+    private static void enterFlat(String callee) {
         Deque<String> stack = CALL_STACK.get();
         String caller = stack.peek();
         if (caller != null) {
@@ -44,10 +63,25 @@ public class CallLogger {
         stack.push(callee);
     }
 
+    private static void enterContext(String callee) {
+        CallContextTree.Node cur = currentContext.get();
+        CallContextTree.Node next = (cur == null)
+                ? contextTree.addRoot(callee)
+                : contextTree.enterChild(cur, callee);
+        currentContext.set(next);
+    }
+
     public static void exit() {
-        Deque<String> stack = CALL_STACK.get();
-        if (!stack.isEmpty()) {
-            stack.pop();
+        if (CONTEXT_SENSITIVE) {
+            CallContextTree.Node cur = currentContext.get();
+            if (cur != null) {
+                currentContext.set(cur.parent());
+            }
+        } else {
+            Deque<String> stack = CALL_STACK.get();
+            if (!stack.isEmpty()) {
+                stack.pop();
+            }
         }
     }
 
@@ -75,14 +109,20 @@ public class CallLogger {
     public static void reset() {
         callGraph.clear();
         CALL_STACK.get().clear();
+        contextTree.clear();
+        currentContext.remove();
     }
 
     public static void dump() {
-        String exporterType = System.getProperty("callgraph.exporterType", "simple"); // FIXME: restore to class variables after resolving issue with maven plugin configs
-        GraphExporter exporter = GraphExporterFactory.createExporter(exporterType);
         String outputFile = System.getProperty("callgraph.output", "calls.txt");
         try {
-            exporter.export(callGraph, outputFile);
+            if (CONTEXT_SENSITIVE) {
+                new CctExporter().export(contextTree, outputFile); // TODO: need different exporters?
+            } else {
+                String exporterType = System.getProperty("callgraph.exporterType", "simple"); // FIXME: restore to class variables after resolving issue with maven plugin configs
+                GraphExporter exporter = GraphExporterFactory.createExporter(exporterType);
+                exporter.export(callGraph, outputFile);
+            }
         } catch (IOException e) {
             System.err.println("Failed to export graph: " + e.getMessage());
         }
