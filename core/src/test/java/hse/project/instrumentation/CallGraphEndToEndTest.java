@@ -88,6 +88,22 @@ class CallGraphEndToEndTest {
 
     // TODO: add instrumenter test w/ thread names enabled for multithreaded app
 
+    @Test
+    void contextSensitiveModeProducesCallingContextTree(@TempDir Path work) throws Exception {
+        Path appDir = locateApp("recursive-app");
+        Path calls = runPipelineToFile(appDir, "recursiveapp.Main", work,
+                "-Dcallgraph.contextSensitive=true");
+
+        List<String> expected = List.of(
+                "recursiveapp.Main::main([Ljava/lang/String;)V 1",
+                "  recursiveapp.Main::factorial(I)I 1",
+                "    recursiveapp.Main::factorial(I)I 1",
+                "      recursiveapp.Main::factorial(I)I 1");
+
+        assertEquals(expected, Files.readAllLines(calls),
+                "calling-context tree differs for recursive-app");
+    }
+
     private void assertGraphMatches(String appName, String mainClass, Path work) throws Exception {
         Path appDir = locateApp(appName);
         Set<String> actual = runPipeline(appDir, mainClass, work);
@@ -98,6 +114,11 @@ class CallGraphEndToEndTest {
 
     // returns resulting edge set
     private Set<String> runPipeline(Path appDir, String mainClass, Path work, String... extraProps) throws Exception {
+        return parseEdges(runPipelineToFile(appDir, mainClass, work, extraProps));
+    }
+
+    // runs the full pipeline and returns the path to the produced output file
+    private Path runPipelineToFile(Path appDir, String mainClass, Path work, String... extraProps) throws Exception {
         Path classes = work.resolve("classes");
         Path appJar = work.resolve("app.jar");
         Path modifiedJar = work.resolve("modified_app.jar");
@@ -109,7 +130,7 @@ class CallGraphEndToEndTest {
         runJar(modifiedJar, calls, work, extraProps);
 
         assertTrue(Files.exists(calls), "instrumented run did not produce " + calls);
-        return parseEdges(calls);
+        return calls;
     }
 
     private void compile(Path srcDir, Path outDir) throws IOException {
