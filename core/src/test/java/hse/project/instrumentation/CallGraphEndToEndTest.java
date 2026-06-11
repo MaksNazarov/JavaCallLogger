@@ -76,6 +76,11 @@ class CallGraphEndToEndTest {
     }
 
     @Test
+    void executorApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("executor-app", "executorapp.Main", work);
+    }
+
+    @Test
     void threadNameFlagPrefixesNodes(@TempDir Path work) throws Exception {
         Path appDir = locateApp("simple-app");
         Set<String> edges = runPipeline(appDir, "simpleapp.Main", work,

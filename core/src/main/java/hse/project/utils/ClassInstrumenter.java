@@ -6,8 +6,19 @@ import javassist.*;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.annotation.Annotation;
+import javassist.expr.ExprEditor;
+import javassist.expr.MethodCall;
+
+import java.util.Set;
 
 public class ClassInstrumenter {
+
+    // java.util.concurrent methods that hand a task off to another thread; their Runnable/
+    // Callable/Supplier argument is wrapped so the task carries the submitter's context
+    private static final Set<String> ASYNC_SINK_METHODS = Set.of(
+            "execute", "submit", "schedule", "scheduleAtFixedRate", "scheduleWithFixedDelay",
+            "runAsync", "supplyAsync"); // TODO: good style? Version support?
+
     private final ClassPool pool;
     private final boolean skipEmptyBodies;
 
@@ -65,6 +76,10 @@ public class ClassInstrumenter {
                                    CtClass loggerClass) throws CannotCompileException {
         if (skipEmptyBodies && behavior.isEmpty()) return;
 
+        // rewrite executor/CompletableFuture submissions in the original body first, so the
+        // editor never sees the injected enter/exit calls
+        wrapAsyncSubmissions(behavior);
+
         String callee = String.format(
             "\"%s::%s%s\"",
             behavior.getDeclaringClass().getName(),
@@ -74,5 +89,60 @@ public class ClassInstrumenter {
 
         behavior.insertBefore(loggerClass.getName() + ".enter(" + callee + ");");
         behavior.insertAfter(loggerClass.getName() + ".exit();", true);
+    }
+
+    private void wrapAsyncSubmissions(CtBehavior behavior) throws CannotCompileException {
+        behavior.instrument(new ExprEditor() {
+            @Override
+            public void edit(MethodCall m) throws CannotCompileException {
+                if (!m.getClassName().startsWith("java.util.concurrent.")
+                        || !ASYNC_SINK_METHODS.contains(m.getMethodName())) {
+                    return;
+                }
+                try {
+                    String replacement = buildWrappedCall(m);
+                    if (replacement != null) {
+                        m.replace(replacement);
+                    }
+                } catch (NotFoundException e) {
+                    // callee signature not resolvable, leave the call untouched
+                }
+            }
+        });
+    }
+
+    private String buildWrappedCall(MethodCall m) throws NotFoundException {
+        CtClass[] params = m.getMethod().getParameterTypes();
+        StringBuilder args = new StringBuilder();
+        boolean wrappedAny = false;
+
+        for (int i = 0; i < params.length; i++) {
+            if (i > 0) {
+                args.append(", ");
+            }
+            String arg = "$" + (i + 1);
+            switch (params[i].getName()) {
+                case "java.lang.Runnable": // TODO: hse.project to const/read from/during instrumentation?
+                    args.append("hse.project.CallLogger.wrapRunnable(").append(arg).append(")");
+                    wrappedAny = true;
+                    break;
+                case "java.util.concurrent.Callable":
+                    args.append("hse.project.CallLogger.wrapCallable(").append(arg).append(")");
+                    wrappedAny = true;
+                    break;
+                case "java.util.function.Supplier":
+                    args.append("hse.project.CallLogger.wrapSupplier(").append(arg).append(")");
+                    wrappedAny = true;
+                    break;
+                default:
+                    args.append(arg);
+            }
+        }
+
+        if (!wrappedAny) {
+            return null;
+        }
+        String assign = m.getMethod().getReturnType() == CtClass.voidType ? "" : "$_ = ";
+        return "{ " + assign + "$proceed(" + args + "); }";
     }
 }

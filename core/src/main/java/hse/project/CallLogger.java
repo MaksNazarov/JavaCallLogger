@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 public class CallLogger {
     private static final Set<String> EXCLUDED_PACKAGES = Set.of(
@@ -112,6 +114,54 @@ public class CallLogger {
                 }
             }
         }
+    }
+
+    public static Runnable wrapRunnable(Runnable task) {
+        if (!CROSS_THREAD || task == null) {
+            return task;
+        }
+        final String submitter = spawnerContext.get();
+        return () -> {
+            String previous = spawnerContext.get();
+            spawnerContext.set(submitter);
+            try {
+                task.run();
+            } finally {
+                spawnerContext.set(previous);
+            }
+        };
+    }
+
+    public static <T> Callable<T> wrapCallable(Callable<T> task) {
+        if (!CROSS_THREAD || task == null) {
+            return task;
+        }
+        final String submitter = spawnerContext.get();
+        return () -> {
+            String previous = spawnerContext.get();
+            spawnerContext.set(submitter);
+            try {
+                return task.call();
+            } finally {
+                spawnerContext.set(previous);
+            }
+        };
+    }
+
+    public static <T> Supplier<T> wrapSupplier(Supplier<T> task) {
+        if (!CROSS_THREAD || task == null) {
+            return task;
+        }
+        final String submitter = spawnerContext.get();
+        return () -> {
+            String previous = spawnerContext.get();
+            spawnerContext.set(submitter);
+            try {
+                return task.get();
+            } finally {
+                spawnerContext.set(previous);
+            }
+        };
     }
 
     private static void recordEdge(String caller, String callee) {

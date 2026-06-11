@@ -1,0 +1,6 @@
+6 5
+executorapp.Main::main([Ljava/lang/String;)V executorapp.Main::warmUp(Ljava/util/concurrent/ExecutorService;)V 1
+executorapp.Main::main([Ljava/lang/String;)V executorapp.Main::submitReal(Ljava/util/concurrent/ExecutorService;)V 1
+executorapp.Main::warmUp(Ljava/util/concurrent/ExecutorService;)V executorapp.Main::noop()V 1
+executorapp.Main::submitReal(Ljava/util/concurrent/ExecutorService;)V executorapp.Main::task()V 1
+executorapp.Main::task()V executorapp.Main::work()V 1
