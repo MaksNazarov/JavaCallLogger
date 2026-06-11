@@ -1,4 +1,6 @@
-6 4
+7 6
+multithreadapp.Main::main([Ljava/lang/String;)V multithreadapp.Main::task1()V 1
+multithreadapp.Main::main([Ljava/lang/String;)V multithreadapp.Main::task2()V 1
 multithreadapp.Main::task1()V multithreadapp.Helper::Helper()V 1
 multithreadapp.Main::task1()V multithreadapp.Helper::doSomething()V 1010
 multithreadapp.Main::task2()V multithreadapp.Utility::Utility()V 1

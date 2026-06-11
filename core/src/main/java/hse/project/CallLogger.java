@@ -34,6 +34,13 @@ public class CallLogger {
     private static final ThreadLocal<CallContextTree.Node> currentContext =
             ThreadLocal.withInitial(() -> null);
 
+    // TODO: settings-static members grouping? Config subclasses?
+    private static final boolean CROSS_THREAD =
+            Boolean.parseBoolean(System.getProperty("callgraph.crossThread", "true"));
+
+    private static final InheritableThreadLocal<String> spawnerContext =
+            new InheritableThreadLocal<>();
+
     // TODO: System.getProperty consistency: read into flags vs in-place
     static {
         // auto-dump on JVM exit; disabled for specific tests
@@ -56,11 +63,18 @@ public class CallLogger {
     private static void enterFlat(String callee) {
         Deque<String> stack = CALL_STACK.get();
         String caller = stack.peek();
+        if (caller == null && CROSS_THREAD) {
+            // entry point on this thread: fall back to the spawning thread's context, if any
+            caller = spawnerContext.get();
+        }
         if (caller != null) {
             // null caller means it's an entry point, so no edge
             recordEdge(caller, callee);
         }
         stack.push(callee);
+        if (CROSS_THREAD) {
+            spawnerContext.set(callee);
+        }
     }
 
     private static void enterContext(String callee) {
@@ -81,6 +95,9 @@ public class CallLogger {
             Deque<String> stack = CALL_STACK.get();
             if (!stack.isEmpty()) {
                 stack.pop();
+                if (CROSS_THREAD) {
+                    spawnerContext.set(stack.peek());
+                }
             }
         }
     }
