@@ -19,6 +19,8 @@ public class ClassInstrumenter {
             "execute", "submit", "schedule", "scheduleAtFixedRate", "scheduleWithFixedDelay",
             "runAsync", "supplyAsync"); // TODO: good style? Version support?
 
+    private static final String LOGGER = CallLogger.class.getName();
+
     private final ClassPool pool;
     private final boolean skipEmptyBodies;
 
@@ -122,16 +124,16 @@ public class ClassInstrumenter {
             }
             String arg = "$" + (i + 1);
             switch (params[i].getName()) {
-                case "java.lang.Runnable": // TODO: hse.project to const/read from/during instrumentation?
-                    args.append("hse.project.CallLogger.wrapRunnable(").append(arg).append(")");
+                case "java.lang.Runnable":
+                    args.append(LOGGER).append(".wrapRunnable(").append(arg).append(")");
                     wrappedAny = true;
                     break;
                 case "java.util.concurrent.Callable":
-                    args.append("hse.project.CallLogger.wrapCallable(").append(arg).append(")");
+                    args.append(LOGGER).append(".wrapCallable(").append(arg).append(")");
                     wrappedAny = true;
                     break;
                 case "java.util.function.Supplier":
-                    args.append("hse.project.CallLogger.wrapSupplier(").append(arg).append(")");
+                    args.append(LOGGER).append(".wrapSupplier(").append(arg).append(")");
                     wrappedAny = true;
                     break;
                 default:

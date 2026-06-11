@@ -41,7 +41,7 @@ public class GraphMLExporter implements GraphExporter {
                         edgeId++, nodeIds.get(edge.source), nodeIds.get(edge.target), edge.weight));
             }
 
-            writer.write("  </graph>\n"); // TODO: ok style?
+            writer.write("  </graph>\n");
             writer.write("</graphml>\n");
         }
     }
