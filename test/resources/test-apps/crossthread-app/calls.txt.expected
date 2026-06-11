@@ -1,0 +1,5 @@
+4 4
+crossthreadapp.Main::main([Ljava/lang/String;)V crossthreadapp.Main::work()V 1
+crossthreadapp.Main::work()V crossthreadapp.Main::leaf()V 1
+crossthreadapp.Main::work()V crossthreadapp.Main::subWork()V 1
+crossthreadapp.Main::subWork()V crossthreadapp.Main::leaf()V 1

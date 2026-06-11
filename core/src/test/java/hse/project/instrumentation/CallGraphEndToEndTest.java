@@ -71,6 +71,11 @@ class CallGraphEndToEndTest {
     }
 
     @Test
+    void crossThreadApp(@TempDir Path work) throws Exception {
+        assertGraphMatches("crossthread-app", "crossthreadapp.Main", work);
+    }
+
+    @Test
     void threadNameFlagPrefixesNodes(@TempDir Path work) throws Exception {
         Path appDir = locateApp("simple-app");
         Set<String> edges = runPipeline(appDir, "simpleapp.Main", work,
