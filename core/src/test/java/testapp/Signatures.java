@@ -3,7 +3,7 @@ package testapp;
 import java.util.List;
 
 /**
- * TODO: add description LMAO
+ * Test fixture for different signatures verification
  */
 public class Signatures {
     public void entry() {
