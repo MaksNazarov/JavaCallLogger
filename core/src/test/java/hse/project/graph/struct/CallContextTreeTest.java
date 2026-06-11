@@ -51,4 +51,17 @@ class CallContextTreeTest {
         tree.addRoot("Y");
         assertEquals(2, tree.roots().size());
     }
+
+    @Test
+    void markFoldedAccumulatesFoldedCountPerNode() {
+        CallContextTree tree = new CallContextTree();
+        Node a = tree.addRoot("A");
+        Node b = tree.enterChild(a, "B");
+
+        tree.markFolded(b);
+        tree.markFolded(b);
+
+        assertEquals(2, b.foldedCount(), "two calls folded into B");
+        assertEquals(0, a.foldedCount(), "nothing folded into A");
+    }
 }

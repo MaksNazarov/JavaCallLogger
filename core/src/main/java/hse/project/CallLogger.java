@@ -31,10 +31,13 @@ public class CallLogger {
     private static final boolean CONTEXT_SENSITIVE =
             Boolean.parseBoolean(System.getProperty("callgraph.contextSensitive", "false"));
 
+    private static final int MAX_CONTEXT_DEPTH =
+            Integer.getInteger("callgraph.maxContextDepth", 0);
+
     private static final CallContextTree contextTree = new CallContextTree();
 
-    private static final ThreadLocal<CallContextTree.Node> currentContext =
-            ThreadLocal.withInitial(() -> null);
+    private static final ThreadLocal<Deque<CallContextTree.Node>> contextStack =
+            ThreadLocal.withInitial(ArrayDeque::new);
 
     // TODO: settings-static members grouping? Config subclasses?
     private static final boolean CROSS_THREAD =
@@ -80,16 +83,20 @@ public class CallLogger {
     }
 
     private static void enterContext(String callee) {
-        CallContextTree.Node cur = currentContext.get();
+        Deque<CallContextTree.Node> stack = contextStack.get();
+        CallContextTree.Node cur = stack.peek();
         CallContextTree.Node next;
         if (cur == null) {
             // entry point: attach the spawning thread's context as a causal link, if any
             String causalCaller = CROSS_THREAD ? spawnerContext.get() : null;
             next = contextTree.addRoot(callee, causalCaller);
+        } else if (MAX_CONTEXT_DEPTH > 0 && stack.size() >= MAX_CONTEXT_DEPTH) {
+            contextTree.markFolded(cur);
+            next = cur; // for exit correctness
         } else {
             next = contextTree.enterChild(cur, callee);
         }
-        currentContext.set(next);
+        stack.push(next);
         if (CROSS_THREAD) {
             spawnerContext.set(callee);
         }
@@ -97,12 +104,12 @@ public class CallLogger {
 
     public static void exit() {
         if (CONTEXT_SENSITIVE) {
-            CallContextTree.Node cur = currentContext.get();
-            if (cur != null) {
-                CallContextTree.Node parent = cur.parent();
-                currentContext.set(parent);
+            Deque<CallContextTree.Node> stack = contextStack.get();
+            if (!stack.isEmpty()) {
+                stack.pop();
                 if (CROSS_THREAD) {
-                    spawnerContext.set(parent == null ? null : parent.method());
+                    CallContextTree.Node top = stack.peek();
+                    spawnerContext.set(top == null ? null : top.method());
                 }
             }
         } else {
@@ -189,7 +196,7 @@ public class CallLogger {
         callGraph.clear();
         CALL_STACK.get().clear();
         contextTree.clear();
-        currentContext.remove();
+        contextStack.get().clear();
     }
 
     public static void dump() {

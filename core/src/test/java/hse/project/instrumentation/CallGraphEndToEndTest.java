@@ -115,6 +115,22 @@ class CallGraphEndToEndTest {
     }
 
     @Test
+    void contextSensitiveModeBoundsDepth(@TempDir Path work) throws Exception {
+        // with maxContextDepth=2 the recursion below depth 2 is folded into the deepest node
+        Path appDir = locateApp("recursive-app");
+        Path calls = runPipelineToFile(appDir, "recursiveapp.Main", work,
+                "-Dcallgraph.contextSensitive=true",
+                "-Dcallgraph.maxContextDepth=2");
+
+        List<String> expected = List.of(
+                "recursiveapp.Main::main([Ljava/lang/String;)V 1",
+                "  recursiveapp.Main::factorial(I)I 1 (+2 folded)");
+
+        assertEquals(expected, Files.readAllLines(calls),
+                "depth-bounded calling-context tree differs for recursive-app");
+    }
+
+    @Test
     void contextSensitiveModeRecordsCrossThreadCausalLinks(@TempDir Path work) throws Exception {
         Path appDir = locateApp("crossthread-app");
         Path calls = runPipelineToFile(appDir, "crossthreadapp.Main", work,

@@ -33,6 +33,9 @@ public class CctExporter {
             // non-main thread: print thread starter too
             writer.write(" <- " + node.causalCaller());
         }
+        if (node.foldedCount() > 0) {
+            writer.write(" (+" + node.foldedCount() + " folded)");
+        }
         writer.newLine();
 
         for (Node child : sortedByMethod(node.children().values())) {

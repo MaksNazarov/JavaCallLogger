@@ -16,6 +16,7 @@ public class CallContextTree {
         private final Map<String, Node> children = new LinkedHashMap<>(); // a node is thread-local by design
         private long count;
         private final String causalCaller; // thread starter for non-main threads
+        private long foldedCount; // calls folded into this node because they exceeded the depth cap
 
         private Node(String method, Node parent, String causalCaller) {
             this.method = method;
@@ -25,6 +26,10 @@ public class CallContextTree {
 
         public String causalCaller() {
             return causalCaller;
+        }
+
+        public long foldedCount() {
+            return foldedCount;
         }
 
         public String method() {
@@ -61,6 +66,10 @@ public class CallContextTree {
         Node child = parent.children.computeIfAbsent(method, m -> new Node(m, parent, null)); // TODO: second constructor better?
         child.count++;
         return child;
+    }
+
+    public void markFolded(Node node) {
+        node.foldedCount++;
     }
 
     public List<Node> roots() {
