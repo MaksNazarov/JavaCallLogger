@@ -109,6 +109,23 @@ class CallGraphEndToEndTest {
                 "calling-context tree differs for recursive-app");
     }
 
+    @Test
+    void contextSensitiveModeRecordsCrossThreadCausalLinks(@TempDir Path work) throws Exception {
+        Path appDir = locateApp("crossthread-app");
+        Path calls = runPipelineToFile(appDir, "crossthreadapp.Main", work,
+                "-Dcallgraph.contextSensitive=true");
+
+        List<String> expected = List.of(
+                "crossthreadapp.Main::main([Ljava/lang/String;)V 1",
+                "crossthreadapp.Main::subWork()V 1 <- crossthreadapp.Main::work()V",
+                "  crossthreadapp.Main::leaf()V 1",
+                "crossthreadapp.Main::work()V 1 <- crossthreadapp.Main::main([Ljava/lang/String;)V",
+                "  crossthreadapp.Main::leaf()V 1");
+
+        assertEquals(expected, Files.readAllLines(calls),
+                "cross-thread calling-context forest differs for crossthread-app");
+    }
+
     private void assertGraphMatches(String appName, String mainClass, Path work) throws Exception {
         Path appDir = locateApp(appName);
         Set<String> actual = runPipeline(appDir, mainClass, work);

@@ -79,17 +79,29 @@ public class CallLogger {
 
     private static void enterContext(String callee) {
         CallContextTree.Node cur = currentContext.get();
-        CallContextTree.Node next = (cur == null)
-                ? contextTree.addRoot(callee)
-                : contextTree.enterChild(cur, callee);
+        CallContextTree.Node next;
+        if (cur == null) {
+            // entry point: attach the spawning thread's context as a causal link, if any
+            String causalCaller = CROSS_THREAD ? spawnerContext.get() : null;
+            next = contextTree.addRoot(callee, causalCaller);
+        } else {
+            next = contextTree.enterChild(cur, callee);
+        }
         currentContext.set(next);
+        if (CROSS_THREAD) {
+            spawnerContext.set(callee);
+        }
     }
 
     public static void exit() {
         if (CONTEXT_SENSITIVE) {
             CallContextTree.Node cur = currentContext.get();
             if (cur != null) {
-                currentContext.set(cur.parent());
+                CallContextTree.Node parent = cur.parent();
+                currentContext.set(parent);
+                if (CROSS_THREAD) {
+                    spawnerContext.set(parent == null ? null : parent.method());
+                }
             }
         } else {
             Deque<String> stack = CALL_STACK.get();

@@ -29,6 +29,10 @@ public class CctExporter {
             writer.write("  ");
         }
         writer.write(node.method() + " " + node.count());
+        if (node.causalCaller() != null) {
+            // non-main thread: print thread starter too
+            writer.write(" <- " + node.causalCaller());
+        }
         writer.newLine();
 
         for (Node child : sortedByMethod(node.children().values())) {
