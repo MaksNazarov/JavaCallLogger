@@ -46,10 +46,12 @@ public class CallLogger {
     private static final InheritableThreadLocal<String> spawnerContext =
             new InheritableThreadLocal<>();
 
-    // TODO: System.getProperty consistency: read into flags vs in-place
+    private static final boolean DUMP_ON_SHUTDOWN = 
+            Boolean.parseBoolean(System.getProperty("callgraph.dumpOnShutdown", "true"));
+
     static {
         // auto-dump on JVM exit; disabled for specific tests
-        if (Boolean.parseBoolean(System.getProperty("callgraph.dumpOnShutdown", "true"))) {
+        if (DUMP_ON_SHUTDOWN) {
             Runtime.getRuntime().addShutdownHook(new Thread(CallLogger::dump));
         }
     }

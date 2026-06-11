@@ -18,7 +18,6 @@ final class ExporterTestSupport {
         return new String(Files.readAllBytes(out), StandardCharsets.UTF_8);
     }
 
-    // TODO: is enough? Add init?
     static CallGraph sampleGraph() {
         CallGraph graph = new CallGraph();
         graph.addEdge("A::run", "B::work");

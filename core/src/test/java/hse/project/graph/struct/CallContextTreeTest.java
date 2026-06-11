@@ -10,7 +10,7 @@ class CallContextTreeTest {
 
     @Test
     void sameContextResolvesToSameNodeAndAccumulatesCount() {
-        CallContextTree tree = new CallContextTree(); // TODO: tree construction looks bad
+        CallContextTree tree = new CallContextTree();
 
         // A -> B -> C, A -> B, A -> D
         Node a = tree.addRoot("A");

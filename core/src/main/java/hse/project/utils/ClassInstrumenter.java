@@ -17,7 +17,7 @@ public class ClassInstrumenter {
     // Callable/Supplier argument is wrapped so the task carries the submitter's context
     private static final Set<String> ASYNC_SINK_METHODS = Set.of(
             "execute", "submit", "schedule", "scheduleAtFixedRate", "scheduleWithFixedDelay",
-            "runAsync", "supplyAsync"); // TODO: good style? Version support?
+            "runAsync", "supplyAsync");
 
     private static final String LOGGER = CallLogger.class.getName();
 

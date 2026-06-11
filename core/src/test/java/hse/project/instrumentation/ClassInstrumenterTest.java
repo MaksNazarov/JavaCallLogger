@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Check instrumentation correctness only // TODO: full description
+ * Check instrumentation correctness only.
  */
 class ClassInstrumenterTest {
 

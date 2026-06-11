@@ -49,7 +49,7 @@ public class CallContextTree {
         }
     }
 
-    private final Queue<Node> roots = new ConcurrentLinkedQueue<>(); // TODO: need merging func?
+    private final Queue<Node> roots = new ConcurrentLinkedQueue<>();
 
     public Node addRoot(String method) {
         return addRoot(method, null);
@@ -63,7 +63,7 @@ public class CallContextTree {
     }
 
     public Node enterChild(Node parent, String method) {
-        Node child = parent.children.computeIfAbsent(method, m -> new Node(m, parent, null)); // TODO: second constructor better?
+        Node child = parent.children.computeIfAbsent(method, m -> new Node(m, parent, null));
         child.count++;
         return child;
     }
