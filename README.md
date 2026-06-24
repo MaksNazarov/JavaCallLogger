@@ -1,4 +1,4 @@
-# JAR Graph Collector
+# TraceGraph
 
 Simple, easy-to-install, easy-to-use Java callgraph collector. It rewrites compiled bytecode (via
 [Javassist](https://www.javassist.org/)) to log every method/constructor entry and exit, so running

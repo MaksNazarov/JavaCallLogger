@@ -6,12 +6,12 @@
 
     <parent>
         <groupId>hse.project</groupId>
-        <artifactId>JAR_graph_collector</artifactId>
+        <artifactId>tracegraph</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>callgraph-core</artifactId>
-    <name>Java Call Graph Collector - Core</name>
+    <name>TraceGraph - Core</name>
 
     <dependencies>
         <dependency>
