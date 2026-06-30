@@ -1,5 +1,7 @@
 # TraceGraph
 
+[![CI](https://github.com/MaksNazarov/JavaCallLogger/actions/workflows/ci.yml/badge.svg)](https://github.com/MaksNazarov/JavaCallLogger/actions/workflows/ci.yml)
+
 Simple, easy-to-install, easy-to-use Java callgraph collector. It rewrites compiled bytecode (via
 [Javassist](https://www.javassist.org/)) to log every method/constructor entry and exit, so running
 your program records which methods actually call which - with call counts, optional calling-context
