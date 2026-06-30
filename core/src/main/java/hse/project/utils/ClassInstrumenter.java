@@ -58,8 +58,10 @@ public class ClassInstrumenter {
             return !behavior.hasAnnotation(Instrumented.class) &&
                 !Modifier.isAbstract(behavior.getModifiers()) &&
                 (!skipEmptyBodies || !behavior.isEmpty());
-        } catch (Exception e) {
-            return false; // TODO: refactor, bad style
+        } catch (RuntimeException e) {
+            // Javassist may fail on malformed/unreadable bytecode; skip such a behavior
+            // rather than aborting instrumentation of the whole class.
+            return false;
         }
     }
 
